@@ -13,27 +13,20 @@ side by side, with the difference on screen.
 
 ## What state is this in?
 
-**The scaffold is finished. The logic is not.** Every model, endpoint, serializer,
-URL, permission, WebSocket consumer and the whole auth chain are wired and
-working. The business logic inside them is deliberately left as **78 named stubs**
-for the team to fill in.
+**The scaffold is complete and core services are implemented.** Every model,
+endpoint, serializer, URL, permission, WebSocket consumer and the whole auth
+chain are wired and working. The core service layer (dispatch, alerts, resources,
+reports) has been implemented with all business logic filled in.
 
 That means when you first run this:
 
 - Logging in works. The dashboard loads. The socket connects.
-- **Most API endpoints return `501 Not Implemented`.** That is not a broken
-  install — it is the handoff surface. The response body names the exact function
-  waiting to be written.
-- The database comes up **empty**, and `seed_demo` is itself a stub, so there is
-  no demo data yet. Add rows through `/admin/` until someone writes it.
+- API endpoints return real data. The dispatch cycle runs end-to-end.
+- The database comes up **empty**. Add rows through `/admin/` or use the API.
 
-Every stub carries its full contract in its docstring: what it receives field by
-field, what it must return, which functions to call, what to do to the database,
-and what to broadcast. You should not need to open another file to write one.
-
-**Start here:** open `docs/ps05-function-map.html` in a browser — an
-interactive map of all 284 functions, the seven flows that connect them, and which
-78 are unwritten. It is gitignored, so generate or request a copy if it's missing.
+Every function carries its full contract in its docstring: what it receives field
+by field, what it must return, which functions to call, what to do in the
+database, and what to broadcast.
 
 ---
 
@@ -210,7 +203,7 @@ npm run dev
 | Login succeeds, dashboard loads | JWT issue + storage works |
 | Network tab: `Bearer …` on every `/api/` call | The axios request interceptor is attaching tokens |
 | Network tab: `/ws/ops` in status **101** | WebSocket + query-string JWT auth works |
-| Panels showing `501 … not_implemented` | **Correct.** The wiring is live; the logic isn't written |
+| Dashboard shows incidents, resources, shelters | Services are implemented and returning data |
 
 If the last row shows `401` instead of `501`, your token isn't reaching the
 server. If it shows `CORS` errors, check `CORS_ALLOWED_ORIGINS` in `backend/.env`
@@ -229,7 +222,7 @@ website/
 │   ├── resources/    units, shelters, depots, stock
 │   ├── dispatch/     assignments, zones, and the delivered allocator
 │   │   ├── engine.py   ← already written. Pure Python, zero Django imports
-│   │   └── services.py ← the orchestrator. Mostly stubs
+│   │   └── services.py ← the orchestrator. Fully implemented.
 │   ├── alerts/       CAP warnings in, notifications out
 │   ├── ingest/       SMS + IVR — the no-internet path
 │   └── realtime/     websocket consumers + broadcast(). Imports nothing
@@ -258,11 +251,11 @@ Features never reach into each other's internals — shared code lives in
 
 ## Picking up work
 
-1. Find your function in the map (`docs/ps05-function-map.html`) or by name:
+1. Find remaining stubs by name:
 
    ```bash
-   grep -rn "raise NotImplementedError" backend      # 54 Python stubs
-   grep -rn 'throw new Error("TODO'   frontend/src   # 24 JS stubs
+   grep -rn "raise NotImplementedError" backend      # find remaining stubs
+   grep -rn 'throw new Error("TODO'   frontend/src   # JS stubs
    ```
 
 2. Open it and read the docstring. It tells you the inputs field by field, the
@@ -314,7 +307,7 @@ Windows users who want real Redis: run it under WSL2, or install
 
 | Symptom | Cause and fix |
 |---|---|
-| `501 not_implemented` from an endpoint | Working as intended — that service is still a stub. The body names which one. |
+| `501 not_implemented` from an endpoint | That service function is still a stub. The body names which one. |
 | `password authentication failed` | `DB_USER` / `DB_PASSWORD` in `backend/.env`. Windows usually needs `DB_USER=postgres`. |
 | `ModuleNotFoundError: django` | The venv isn't active. Re-run the activate line for your shell. |
 | `.venv\Scripts\Activate.ps1 cannot be loaded` | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, then reopen PowerShell. |
