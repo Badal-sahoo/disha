@@ -7,5 +7,5 @@ urlpatterns = [
     # unparsed must precede <pk>
     path("sms/unparsed", UnparsedSmsView.as_view(), name="sms-unparsed"),
     path("sms/<int:pk>/incident", IncidentFromSmsView.as_view(), name="sms-incident"),
-    path("ivr", IvrView.as_view(), name="ivr"),
+    path("ivr", IvrView.as_view(), name="ivr")
 ]

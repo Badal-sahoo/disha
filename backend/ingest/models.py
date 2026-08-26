@@ -11,8 +11,13 @@ class SmsMessage(models.Model):
     gateway_id = models.CharField(max_length=64, blank=True)
     parsed = models.JSONField(null=True, blank=True)
     confidence = models.FloatField(default=0.0)
-    incident = models.ForeignKey("reports.Incident", null=True, blank=True,
-                                 on_delete=models.SET_NULL, related_name="sms")
+    incident = models.ForeignKey(
+        "reports.Incident", 
+        null=True, 
+        blank=True,
+        on_delete=models.SET_NULL, 
+        related_name="sms"
+    )
 
     class Meta:
         ordering = ["-received_at"]
@@ -27,8 +32,13 @@ class IvrSession(models.Model):
     from_number = models.CharField(max_length=20)
     state = models.CharField(max_length=32, default="ASK_TYPE")
     answers = models.JSONField(default=dict)
-    incident = models.ForeignKey("reports.Incident", null=True, blank=True,
-                                 on_delete=models.SET_NULL, related_name="ivr")
+    incident = models.ForeignKey(
+        "reports.Incident", 
+        null=True, 
+        blank=True,
+        on_delete=models.SET_NULL, 
+        related_name="ivr"
+    )
     started_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
