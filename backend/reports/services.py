@@ -221,7 +221,41 @@ def heatmap_cells(bbox=None):
     CONSUMED BY: frontend features/heatmap -- toHeatGeoJSON() turns each row into
                  one GeoJSON point with `weight` as the heat intensity property.
     """
-    raise NotImplementedError("reports.services.heatmap_cells -- Track 1 - Day 2")
+    from django.db.models import F, Sum, Count
+    from common.geo import bbox_filter
+
+    incidents = Incident.objects.filter(status=Incident.Status.OPEN)
+
+    if bbox:
+        incidents = bbox_filter(incidents, bbox, "lat", "lon")
+
+    # One query: group by cell_id, annotate with weighted sum and count.
+    cells = list(
+        incidents
+        .values("cell_id")
+        .annotate(
+            weight=Sum(F("severity") * F("corroborations")),
+            count=Count("id"),
+        )
+        .order_by()
+    )
+
+    # Parse cell_id back to lat/lon centre and build output.
+    result = []
+    for cell in cells:
+        cell_id = cell["cell_id"]
+        parts = cell_id.split(",")
+        lat = float(parts[0])
+        lon = float(parts[1])
+        result.append({
+            "cell_id": cell_id,
+            "lat": lat,
+            "lon": lon,
+            "weight": float(cell["weight"] or 0),
+            "count": cell["count"] or 0,
+        })
+
+    return result
 
 
 def mark_first_response(incident, ts):

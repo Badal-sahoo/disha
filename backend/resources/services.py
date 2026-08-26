@@ -5,7 +5,7 @@ IMPORT RULE: resources may import accounts. It must NOT import dispatch or
 reports. dispatch imports THIS module, not the other way round.
 """
 from .serializers import ResourceSerializer, ShelterSerializer
-from .models import Resource, Shelter
+from .models import Resource, Shelter, Depot, SupplyStock
 from realtime.broadcast import broadcast
 from django.db.models import Q
 from django.db import transaction
@@ -29,6 +29,8 @@ def available_units(now):
     return (Resource.objects
             .filter(status=Resource.Status.IDLE)
             .filter(Q(free_at__isnull=True) | Q(free_at__lte=now)))
+
+
 def release_due(now):
     """Flip units back to IDLE once their free_at has passed. Called at the top
     of every dispatch cycle, before anything is read.
@@ -59,6 +61,8 @@ def release_due(now):
         r.status = Resource.Status.IDLE
         broadcast("resource.update", ResourceSerializer(r).data)
     return len(due)
+
+
 def set_busy(resource, until, lat, lon):
     """Mark a unit busy and move it to where it will END UP -- the shelter, not
     the incident. Otherwise its next job is planned from the wrong origin.
@@ -87,6 +91,8 @@ def set_busy(resource, until, lat, lon):
         resource.lon = lon
     resource.save(update_fields=["status", "free_at", "lat", "lon"])
     broadcast("resource.update", ResourceSerializer(resource).data)
+
+
 def nearest_shelter(lat, lon, n=1, people=1):
     """Nearest shelter that can actually take the group.
 
@@ -108,7 +114,25 @@ def nearest_shelter(lat, lon, n=1, people=1):
 
     CALLED BY: resources/views.py NearestShelterView (GET /api/shelters/nearest)
     """
-    raise NotImplementedError("resources.services.nearest_shelter -- Track 1 - Day 2")
+    from common.geo import haversine_km
+
+    if people <= 0:
+        people = 1
+
+    # Get all open shelters with enough remaining capacity.
+    candidates = Shelter.objects.filter(
+        status=Shelter.Status.OPEN,
+    )
+    # Filter in Python for remaining capacity (it's a property, not a column).
+    result = []
+    for s in candidates:
+        if s.remaining >= people:
+            km = haversine_km(lat, lon, s.lat, s.lon)
+            result.append((s, km))
+
+    # Sort nearest-first and return top n.
+    result.sort(key=lambda x: x[1])
+    return [s for s, _ in result[:n]]
 
 
 def reserve_shelter(shelter, people):
@@ -150,6 +174,8 @@ def reserve_shelter(shelter, people):
     broadcast("shelter.update", ShelterSerializer(locked).data)
     shelter.occupancy, shelter.status = locked.occupancy, locked.status
     return True
+
+
 def adjust_occupancy(shelter, delta):
     """Walk-ins arrive without a rescue team. Occupancy must be editable or it
     drifts from reality within the hour.
@@ -168,7 +194,31 @@ def adjust_occupancy(shelter, delta):
 
     CALLED BY: resources/views.py ShelterDetailView.patch
     """
-    raise NotImplementedError("resources.services.adjust_occupancy -- Track 1 - Day 2")
+    with transaction.atomic():
+        locked = Shelter.objects.select_for_update().get(pk=shelter.pk)
+
+        # Apply delta and clamp to [0, capacity].
+        new_occupancy = locked.occupancy + delta
+        if new_occupancy < 0:
+            new_occupancy = 0
+        if new_occupancy > locked.capacity:
+            new_occupancy = locked.capacity
+
+        locked.occupancy = new_occupancy
+
+        # Recompute status -- but never overwrite INACCESSIBLE.
+        if locked.status != Shelter.Status.INACCESSIBLE:
+            if locked.remaining == 0:
+                locked.status = Shelter.Status.FULL
+            else:
+                locked.status = Shelter.Status.OPEN
+
+        locked.save(update_fields=["occupancy", "status"])
+
+    # Broadcast AFTER the transaction commits, never inside it.
+    broadcast("shelter.update", ShelterSerializer(locked).data)
+    shelter.occupancy, shelter.status = locked.occupancy, locked.status
+    return locked
 
 
 def compute_supply_plan():
@@ -195,7 +245,75 @@ def compute_supply_plan():
     NOTE: first thing to cut if a track slips. Runs on a 15-minute batch, never
           on every report.
     """
-    raise NotImplementedError("resources.services.compute_supply_plan -- Track 5 - Day 3")
+    from common.geo import haversine_km
+    from django.conf import settings
+
+    KIT_PER_PERSON = getattr(settings, "KIT_PER_PERSON", 1)
+
+    # Read depot stock levels.
+    stocks = SupplyStock.objects.select_related("depot").filter(quantity__gt=0)
+
+    # Read open shelters and compute demand per item.
+    shelters = Shelter.objects.filter(status=Shelter.Status.OPEN)
+
+    if not stocks.exists() or not shelters.exists():
+        return []
+
+    flows = []
+
+    # Build supply and demand per item type.
+    for item_type in SupplyStock.Item:
+        item_label = item_type[0]  # "KIT", "WATER", "FOOD", "MEDICAL"
+
+        # Supply: {depot_code: quantity}
+        supply = {}
+        for s in stocks.filter(item=item_label):
+            if s.depot.code not in supply:
+                supply[s.depot.code] = {"quantity": 0, "depot": s.depot}
+            supply[s.depot.code]["quantity"] += s.quantity
+
+        # Demand: {shelter_code: quantity_needed}
+        demand = {}
+        for sh in shelters:
+            needed = sh.occupancy * KIT_PER_PERSON
+            if needed > 0:
+                demand[sh.code] = {"quantity": needed, "shelter": sh}
+
+        if not supply or not demand:
+            continue
+
+        # Simple greedy assignment: for each depot, assign to nearest shelter
+        # with unmet demand. A real implementation would use networkx.min_cost_flow.
+        for depot_code, depot_info in supply.items():
+            remaining_stock = depot_info["quantity"]
+            depot = depot_info["depot"]
+
+            # Sort shelters by distance from depot.
+            shelter_list = [
+                (sh_code, sh_info["quantity"], sh_info["shelter"])
+                for sh_code, sh_info in demand.items()
+                if sh_info["quantity"] > 0
+            ]
+            shelter_list.sort(key=lambda x: haversine_km(depot.lat, depot.lon, x[2].lat, x[2].lon))
+
+            for sh_code, needed, sh in shelter_list:
+                if remaining_stock <= 0:
+                    break
+                qty = min(remaining_stock, needed)
+                cost = haversine_km(depot.lat, depot.lon, sh.lat, sh.lon) * qty
+
+                flows.append({
+                    "depot": depot_code,
+                    "shelter": sh_code,
+                    "item": item_label,
+                    "quantity": qty,
+                    "cost": round(cost, 2),
+                })
+
+                remaining_stock -= qty
+                demand[sh_code]["quantity"] -= qty
+
+    return flows
 
 
 def commit_supply_plan(flows):
@@ -214,4 +332,76 @@ def commit_supply_plan(flows):
 
     CALLED BY: resources/views.py SupplyCommitView (POST /api/supply/commit)
     """
-    raise NotImplementedError("resources.services.commit_supply_plan -- Track 5 - Day 3")
+    committed = 0
+    rejected = []
+
+    with transaction.atomic():
+        for flow in flows:
+            depot_code = flow.get("depot", "")
+            shelter_code = flow.get("shelter", "")
+            item = flow.get("item", "")
+            quantity = flow.get("quantity", 0)
+
+            # Look up depot.
+            try:
+                depot = Depot.objects.get(code=depot_code)
+            except Depot.DoesNotExist:
+                rejected.append({
+                    "depot": depot_code,
+                    "shelter": shelter_code,
+                    "item": item,
+                    "reason": "unknown_code",
+                })
+                continue
+
+            # Look up shelter.
+            try:
+                shelter = Shelter.objects.get(code=shelter_code)
+            except Shelter.DoesNotExist:
+                rejected.append({
+                    "depot": depot_code,
+                    "shelter": shelter_code,
+                    "item": item,
+                    "reason": "unknown_code",
+                })
+                continue
+
+            if shelter.status != Shelter.Status.OPEN:
+                rejected.append({
+                    "depot": depot_code,
+                    "shelter": shelter_code,
+                    "item": item,
+                    "reason": "shelter_closed",
+                })
+                continue
+
+            # Lock the stock row.
+            try:
+                stock = SupplyStock.objects.select_for_update().get(
+                    depot=depot, item=item
+                )
+            except SupplyStock.DoesNotExist:
+                rejected.append({
+                    "depot": depot_code,
+                    "shelter": shelter_code,
+                    "item": item,
+                    "reason": "unknown_code",
+                })
+                continue
+
+            if stock.quantity < quantity:
+                rejected.append({
+                    "depot": depot_code,
+                    "shelter": shelter_code,
+                    "item": item,
+                    "reason": "insufficient_stock",
+                })
+                continue
+
+            # Decrement stock -- do not go negative.
+            stock.quantity -= quantity
+            stock.save(update_fields=["quantity"])
+
+            committed += 1
+
+    return {"committed": committed, "rejected": rejected}
