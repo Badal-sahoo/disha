@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "ResQ",
+    "slug": "resq",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "resq",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ResQ uses your location to queue emergency SOS requests with precise coordinates."
+      }
+    },
+    "android": {
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ResQ uses your location to queue emergency SOS requests with precise coordinates."
+        }
+      ]
+    ]
+  }
+}
