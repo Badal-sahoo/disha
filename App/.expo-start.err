@@ -1,0 +1,94 @@
+Failed to construct transformer:  Error: Cannot find module 'babel-preset-expo'
+Require stack:
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\files\plugins.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\files\index.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\index.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\serializer\treeShakeSerializerPlugin.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\serializer\withExpoSerializers.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\ExpoMetroConfig.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\config\loadUserConfig.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\index.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\build\src\start\server\metro\instantiateMetro.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\build\src\start\server\metro\MetroBundlerDevServer.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\build\src\start\server\DevServerManager.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\build\src\start\startAsync.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\build\src\start\index.js
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\build\bin\cli
+- C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\expo\bin\cli
+
+Make sure that all the Babel plugins and presets you are using
+are defined as dependencies or devDependencies in your package.json
+file. It's possible that the missing plugin is loaded by a preset
+you are using that forgot to add the plugin to its dependencies: you
+can workaround this problem by explicitly adding the missing package
+to your top-level package.json.
+
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at resolve (node:internal/modules/helpers:146:19)
+    at tryRequireResolve (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\files\plugins.js:128:11)
+    at resolveStandardizedNameForRequire (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\files\plugins.js:162:19)
+    at resolveStandardizedName (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\files\plugins.js:183:12)
+    at loadPreset (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\files\plugins.js:68:7)
+    at loadPreset.next (<anonymous>)
+    at createDescriptor (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-descriptors.js:140:16)
+    at createDescriptor.next (<anonymous>)
+    at evaluateSync (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\gensync\index.js:251:28)
+    at C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\gensync\index.js:31:34
+    at Array.map (<anonymous>)
+    at Function.sync (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\gensync\index.js:31:22)
+    at Function.all (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\gensync\index.js:210:24)
+    at Generator.next (<anonymous>)
+    at createDescriptors (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-descriptors.js:102:41)
+    at createDescriptors.next (<anonymous>)
+    at createPresetDescriptors (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-descriptors.js:96:17)
+    at createPresetDescriptors.next (<anonymous>)
+    at C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\gensync-utils\functional.js:22:27
+    at Generator.next (<anonymous>)
+    at mergeChainOpts (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-chain.js:350:34)
+    at mergeChainOpts.next (<anonymous>)
+    at chainWalker (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-chain.js:316:14)
+    at chainWalker.next (<anonymous>)
+    at loadFileChain (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-chain.js:191:24)
+    at loadFileChain.next (<anonymous>)
+    at mergeExtendsChain (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-chain.js:328:28)
+    at mergeExtendsChain.next (<anonymous>)
+    at chainWalker (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-chain.js:312:20)
+    at chainWalker.next (<anonymous>)
+    at buildRootChain (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\config-chain.js:56:36)
+    at buildRootChain.next (<anonymous>)
+    at loadPrivatePartialConfig (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\partial.js:72:62)
+    at loadPrivatePartialConfig.next (<anonymous>)
+    at loadPartialConfig (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\partial.js:115:25)
+    at loadPartialConfig.next (<anonymous>)
+    at evaluateSync (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\gensync\index.js:251:28)
+    at sync (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\gensync\index.js:89:14)
+    at stopHiding - secret - don't use this - v1 (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\errors\rewrite-stack-trace.js:47:12)
+    at loadPartialConfigSync (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@babel\core\lib\config\index.js:37:84)
+    at Object.getCacheKey (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\babel-transformer.js:190:66)
+    at Object.getCacheKey (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\transform-worker\metro-transform-worker.js:643:28)
+    at getTransformCacheKey (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\getTransformCacheKey.js:17:19)
+    at new Transformer (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\Transformer.js:40:43)
+    at C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\Bundler.js:25:29
+    at async Bundler.ready (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\Bundler.js:62:5)
+    at async IncrementalBundler.ready (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\IncrementalBundler.js:310:5)
+    at async Server.ready (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\Server.js:1446:5)
+    at async runMetro (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\index.flow.js:142:5) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@babel\\core\\lib\\config\\files\\plugins.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@babel\\core\\lib\\config\\files\\index.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@babel\\core\\lib\\index.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\node_modules\\@expo\\metro-config\\build\\serializer\\treeShakeSerializerPlugin.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\node_modules\\@expo\\metro-config\\build\\serializer\\withExpoSerializers.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\node_modules\\@expo\\metro-config\\build\\ExpoMetroConfig.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\node_modules\\@expo\\metro-config\\build\\config\\loadUserConfig.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\node_modules\\@expo\\metro-config\\build\\index.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\build\\src\\start\\server\\metro\\instantiateMetro.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\build\\src\\start\\server\\metro\\MetroBundlerDevServer.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\build\\src\\start\\server\\DevServerManager.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\build\\src\\start\\startAsync.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\build\\src\\start\\index.js',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\@expo\\cli\\build\\bin\\cli',
+    'C:\\Users\\swadh\\OneDrive\\Desktop\\Projects\\ResQ\\node_modules\\expo\\bin\\cli'
+  ]
+}

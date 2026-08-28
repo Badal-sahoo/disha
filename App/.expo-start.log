@@ -1,0 +1,33 @@
+
+> resq@1.0.0 start
+> expo start --lan
+
+Starting project at C:\Users\swadh\OneDrive\Desktop\Projects\ResQ
+Starting Metro Bundler
+
+Waiting on http://localhost:8081
+
+Logs for your project will appear below.
+Android Bundling failed 27ms node_modules\expo\AppEntry.js (1 module)
+[31m[7m[1m ERROR [22m[27m[39m TypeError: Cannot read properties of undefined (reading 'transformFile')
+    at Bundler.transformFile (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\Bundler.js:55:30)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async bundler.transformFile (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\@expo\cli\node_modules\@expo\metro-config\build\serializer\packedMap.js:172:41)
+    at async Object.transform (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\lib\transformHelpers.js:139:12)
+    at async transform (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\Graph.js:176:26)
+    at async visit (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\buildSubgraph.js:80:29)
+    at async Promise.all (index 0)
+    at async buildSubgraph (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\buildSubgraph.js:105:3)
+    at async Graph._buildDelta (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\Graph.js:163:22)
+    at async Graph.initialTraverseDependencies (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\Graph.js:146:19)
+    at async DeltaCalculator._getChangedDependencies (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:164:25)
+    at async DeltaCalculator.getDelta (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler\DeltaCalculator.js:74:16)
+    at async DeltaBundler.buildGraph (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\DeltaBundler.js:42:5)
+    at async IncrementalBundler.buildGraphForEntries (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\IncrementalBundler.js:94:19)
+    at async IncrementalBundler.buildGraph (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\IncrementalBundler.js:178:19)
+    at async C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\IncrementalBundler.js:216:34
+    at async IncrementalBundler.initializeGraph (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\IncrementalBundler.js:233:24)
+    at async build (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\Server.js:878:35)
+    at async Server.requestProcessor [as _processBundleRequest] (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\Server.js:760:18)
+    at async Server._processRequest (C:\Users\swadh\OneDrive\Desktop\Projects\ResQ\node_modules\metro\src\Server.js:518:7)
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
