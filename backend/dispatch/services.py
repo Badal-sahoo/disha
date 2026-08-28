@@ -24,8 +24,8 @@ from realtime.broadcast import broadcast, notify_unit
 
 from .models import Assignment, Zone
 
-_last_run_at = None
-_zone_cache = None
+_last_run_at = None   # module-level debounce timestamp
+_zone_cache = None    # module-level zone cache
 
 
 def run_cycle(trigger):
