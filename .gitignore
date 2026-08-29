@@ -26,9 +26,11 @@ npm-debug.log*
 .env
 .env.local
 !.env.example
+.env.example
 
 # --- os / editor ---
 .DS_Store
 .idea/
 .vscode/
 *.swp
+dishavenv
