@@ -1,26 +1,31 @@
 {
   "expo": {
-    "name": "ResQ",
-    "slug": "resq",
+    "name": "DISHA",
+    "slug": "disha",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "scheme": "resq",
-    "assetBundlePatterns": ["**/*"],
+    "scheme": "disha",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "ResQ uses your location to queue emergency SOS requests with precise coordinates."
+        "NSLocationWhenInUseUsageDescription": "DISHA uses your location so rescue teams know where to find you."
       }
     },
     "android": {
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "ResQ uses your location to queue emergency SOS requests with precise coordinates."
+          "locationWhenInUsePermission": "DISHA uses your location so rescue teams know where to find you."
         }
       ]
     ]

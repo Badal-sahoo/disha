@@ -6,13 +6,13 @@
  */
 import { BrowserRouter } from "react-router-dom";
 
-import { useSyncUser } from "@/features/auth";
+import { useSyncUser } from "@/features/auth/hooks";
 
 import AppRoutes from "./routes";
 
 function Bootstrap() {
   const { loading } = useSyncUser();
-  if (loading) return <div className="boot">Loading session...</div>;
+  if (loading) return <div className="boot">Restoring session</div>;
   return <AppRoutes />;
 }
 

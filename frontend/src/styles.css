@@ -1,205 +1,1197 @@
-/* PS-05 ops dashboard -- minimal dark chrome.
-   Deliberately plain: the map and the KPI numbers are what a judge looks at,
-   and a design pass is not what wins this. Restyle freely. */
+/* DISHA — district emergency operations.
+   One stylesheet, no framework, no component library.
+
+   THE RULE THIS FILE IS BUILT ON:
+
+       Interface chrome carries no hue. Every saturated colour on screen is data.
+
+   Buttons, borders, nav, panels and focus are neutrals. The entire hue budget
+   belongs to the two domain ladders in shared/utils/constants.js -- severity
+   (warm) and status (cool) -- plus ONE reserved brass, spent only on the signal
+   moment and on actions that cannot be taken back. In an ops room, if the
+   interface competes with the map for colour, an operator loses the ability to
+   read severity pre-attentively. The austerity is the feature.
+
+   Every colour is a variable. A hardcoded hex here has broken light mode before. */
+
+/* ---------------------------------------------------------------------------
+   TOKENS
+   --------------------------------------------------------------------------- */
 
 :root {
-  --bg: #0f1115;
-  --panel: #171a21;
-  --panel-2: #1e222b;
-  --line: #2a2f3a;
-  --text: #e6e8ec;
-  --muted: #8b93a1;
-  --accent: #4c8dff;
-  --ok: #2f9e44;
-  --warn: #f08c00;
-  --danger: #e03131;
+  /* Ground: deep chart navy, shifted green. Not neutral slate -- slate is the
+     default dark-dashboard ramp and it reads as every other product. */
+  --bg: #0b1620;
+  --panel: #10202c;
+  --panel-2: #17303f;
+  --line: #22475c;
+  --line-soft: #1a3547;
+  --text: #e8edf0;
+  --muted: #7e96a6;
+
+  /* The one hue the chrome is allowed. Brass: the signal moment, and any
+     action that dispatches a real unit to a real place. */
+  --accent: #c8862a;
+  --accent-ink: #1a1005;
+  --accent-soft: #3a2a10;
+
+  /* Chrome status. These are for interface state (connected / failed), NOT for
+     domain data -- domain colour lives in constants.js. */
+  --ok: #2fa98a;
+  --warn: #d18b2c;
+  --danger: #d95757;
+  --enroute: #3e8fd0;   /* mirrors STATUS_COLORS.ENROUTE, for the "sent" pill */
+
+  --map-shade: rgba(6, 14, 20, 0.55);  /* scrim behind floating map instruments */
+
+  /* TYPE ---------------------------------------------------------------------
+     Archivo is a signage grotesque with a real width axis, so the login mark can
+     go wide while the interface stays normal. IBM Plex Mono carries anything an
+     operator reads as DATA -- call signs, ETAs, counts, times. Control rooms
+     read tabular. Both have a full system fallback: if the ops room is offline
+     the app still sets correctly, it just loses the display voice. */
+  --sans: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Five sizes and one display. The old sheet had ten, four of which were
+     within 3px of each other -- too close to read as deliberate, far enough
+     apart to read as sloppy. */
+  --fs-label: 11px;    /* mono, caps, tracked -- the only small size */
+  --fs-dense: 13px;    /* dense data rows */
+  --fs-body: 15px;
+  --fs-title: 20px;
+  --fs-figure: 32px;   /* KPI values */
+  --fs-display: clamp(56px, 9vw, 104px);
+
+  /* SPACE -- 4px base. Everything snaps to it, so adjacent panels share a
+     baseline. The old sheet used 2/4/6/8/9/10/11/12/14/16/18/20/24/32/40/48. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  --r1: 4px;
+  --r2: 8px;
+  --r3: 12px;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 8px 28px -6px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+
+  /* GLASS + CLAY -------------------------------------------------------------
+     Two materials, and which one a surface gets is decided by what is BEHIND it,
+     not by taste:
+
+       GLASS  -- chrome that floats over something else (the rail, the top bar,
+                 the instruments over the map). Translucent, blurred, with a
+                 hairline lit top edge where it catches the light.
+       CLAY   -- surfaces that hold data (panels, cards, buttons). Opaque, soft,
+                 gently raised. Dense figures need an unmoving ground: a table of
+                 ETAs read through frosted glass is a legibility bug, not a look.
+
+     The ambient wash on <body> is what makes the glass read at all -- glass over
+     a flat fill is just a lighter rectangle. */
+  --glass: color-mix(in srgb, var(--panel) 72%, transparent);
+  --glass-blur: blur(20px) saturate(1.4);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+
+  --clay: 0 1px 1px rgba(0, 0, 0, 0.2), 0 6px 16px -8px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --clay-lift: 0 2px 3px rgba(0, 0, 0, 0.22), 0 14px 30px -12px rgba(0, 0, 0, 0.6),
+               inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --fast: 130ms;
+  --slow: 260ms;
+
+  --rail: 244px;
+}
+
+/* Light theme: the same chart, on paper. Only variables change -- no component
+   knows about themes. The MAP basemap is not swapped, only dimmed; see map.js. */
+:root[data-theme="light"] {
+  --bg: #eceff2;
+  --panel: #ffffff;
+  --panel-2: #f2f5f8;
+  --line: #c3d0da;
+  --line-soft: #dde4ea;
+  --text: #0b1620;
+  --muted: #5b6f7e;
+
+  --accent: #99621a;
+  --accent-ink: #ffffff;
+  --accent-soft: #f3e6d2;
+
+  --ok: #1c7d65;
+  --warn: #9a6414;
+  --danger: #b03636;
+  --enroute: #2b6fa8;
+
+  --map-shade: rgba(255, 255, 255, 0.6);
+
+  --shadow-1: 0 1px 2px rgba(11, 22, 32, 0.08);
+  --shadow-2: 0 8px 28px -6px rgba(11, 22, 32, 0.18), 0 2px 6px rgba(11, 22, 32, 0.08);
+
+  --glass: color-mix(in srgb, var(--panel) 78%, transparent);
+  --glass-edge: rgba(255, 255, 255, 0.9);
+  --clay: 0 1px 1px rgba(11, 22, 32, 0.05), 0 6px 16px -8px rgba(11, 22, 32, 0.16),
+          inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --clay-lift: 0 2px 3px rgba(11, 22, 32, 0.07), 0 14px 30px -12px rgba(11, 22, 32, 0.2),
+               inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* Two very low-opacity pools of the domain hues -- warm top-left, cool
+     bottom-right -- fixed so they do not travel with scroll. This is the ground
+     the glass has to refract; without it every frosted surface is just a paler
+     box. Kept far below the threshold where it reads as a gradient. */
+  background:
+    radial-gradient(1100px 700px at 12% -10%,
+      color-mix(in srgb, var(--accent) 9%, transparent), transparent 62%),
+    radial-gradient(900px 800px at 108% 108%,
+      color-mix(in srgb, var(--enroute) 9%, transparent), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
-  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font: var(--fs-body) / 1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-button, select, input, textarea {
-  font: inherit;
-  color: var(--text);
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 6px 10px;
+/* The frosted-chrome material. backdrop-filter is progressive: a browser
+   without it still gets a legible translucent panel, just flat. */
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
-button { cursor: pointer; }
-button:hover:not(:disabled) { border-color: var(--accent); }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
+/* The lit top edge. This one hairline is most of what separates "glass" from
+   "a div with opacity on it". */
+.glass--edge { box-shadow: inset 0 1px 0 var(--glass-edge); }
+
+/* ---------------------------------------------------------------------------
+   TYPE ROLES
+   --------------------------------------------------------------------------- */
+
+/* The one small size. Every eyebrow, field label, column head and panel caption
+   in the app is this, so "small text" is one decision instead of four. */
+.label {
+  font-family: var(--mono);
+  font-size: var(--fs-label);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Anything an operator reads as a number. Tabular so columns of ETAs line up
+   and a changing figure does not shift its neighbours. */
+.figure {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
 
 .muted { color: var(--muted); }
 .error { color: var(--danger); }
-.boot { padding: 40px; color: var(--muted); }
 
-/* --- login --- */
-.login-shell { display: grid; place-items: center; min-height: 100vh; }
-.login-card {
-  display: flex; flex-direction: column; gap: 8px;
-  width: 320px; padding: 28px;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
-}
-.login-card h1 { margin: 0; font-size: 28px; letter-spacing: 2px; }
-.login-card label { margin-top: 10px; font-size: 12px; color: var(--muted); }
-.login-card button { margin-top: 16px; background: var(--accent); border-color: var(--accent); }
+/* ---------------------------------------------------------------------------
+   BUTTONS -- three tiers, because "Refresh" and "Dispatch all" are not the
+   same kind of act. The old sheet gave every button one style and one hover,
+   so the control that commits every unit in the district looked like a
+   checkbox label.
+   --------------------------------------------------------------------------- */
 
-/* --- layout --- */
-.layout { display: flex; flex-direction: column; height: 100vh; }
-.layout__bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line);
+button,
+.btn {
+  font: 500 var(--fs-dense) / 1.2 var(--sans);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  min-height: 34px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  cursor: pointer;
+  box-shadow: var(--clay);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease), color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
 }
-.layout__brand { display: flex; align-items: baseline; gap: 10px; }
-.layout__right { display: flex; align-items: center; gap: 12px; }
-.layout__body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+button:hover:not(:disabled),
+.btn:hover:not(:disabled) {
+  background: var(--line-soft);
+  border-color: var(--muted);
+  transform: translateY(-1px);
+  box-shadow: var(--clay-lift);
+}
+/* Pressed clay compresses: the lift goes, the shadow tucks under. */
+button:active:not(:disabled),
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+button:disabled,
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Tier 2: the quiet one. Inline actions inside a dense row -- "Why this unit?",
+   "Clear" -- that must not pull rank on the row they sit in. */
+.btn--ghost {
+  background: transparent;
+  /* A resting hairline. With a fully transparent border this variant read as a
+     small heading rather than as something you can press. */
+  border-color: var(--line-soft);
+  color: var(--muted);
+  padding: var(--s1) var(--s2);
+  min-height: 26px;
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--mono);
+  box-shadow: none;
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--panel-2);
+  border-color: var(--line);
+  color: var(--text);
+  transform: none;
+  box-shadow: var(--clay);
+}
+
+/* Tier 3: brass. This sends units. Nothing else in the chrome may use it. */
+.btn--commit {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.btn--commit:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  filter: brightness(1.1);
+}
+.btn--block { width: 100%; }
+
+/* ---------------------------------------------------------------------------
+   FORMS
+   --------------------------------------------------------------------------- */
+
+select, input, textarea {
+  font: var(--fs-dense) / 1.4 var(--sans);
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r2);
+  padding: var(--s2) var(--s3);
+  min-height: 34px;
+  /* Pressed into the surface rather than sitting on it -- the inverse of the
+     buttons, so a field never reads as something you can click. */
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
+}
+input::placeholder { color: var(--muted); }
+select:hover, input:hover, textarea:hover { border-color: var(--muted); }
+select { cursor: pointer; }
+
+/* The field label pattern, used by every form in the app. */
+.field { display: flex; flex-direction: column; gap: var(--s1); }
+
+/* One visible focus ring everywhere, including the sidebar links. Brass, because
+   focus is the one piece of chrome that must never be missed. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r1);
+}
+
+/* Announced to screen readers, never drawn. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+.boot {
+  display: grid; place-items: center; min-height: 100vh;
+  color: var(--muted); font-family: var(--mono); font-size: var(--fs-dense);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   PILLS -- small state markers. Hue only when the state is domain data.
+   --------------------------------------------------------------------------- */
 
 .pill {
-  padding: 2px 10px; border-radius: 999px; font-size: 12px;
+  display: inline-flex; align-items: center; gap: var(--s1);
+  padding: 3px var(--s2); border-radius: 999px;
+  font-family: var(--mono); font-size: var(--fs-label); font-weight: 500;
+  letter-spacing: 0.08em; white-space: nowrap;
   background: var(--panel-2); border: 1px solid var(--line); color: var(--muted);
 }
-.pill.is-live { color: var(--ok); border-color: var(--ok); }
+.pill.is-live { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+.pill.is-sent { color: var(--enroute); border-color: color-mix(in srgb, var(--enroute) 45%, transparent); }
 
-/* --- kpi strip --- */
-.kpi-strip {
-  display: flex; gap: 1px; background: var(--line);
+/* The connection dot. A slow pulse is the only thing on an idle screen that
+   says the socket is still alive -- a static dot cannot tell you that. */
+.live-dot {
+  position: relative; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--muted); flex: none;
+}
+.live-dot.is-live { background: var(--ok); }
+.live-dot.is-live::after {
+  content: ""; position: absolute; inset: -3px;
+  border-radius: 50%; border: 1px solid var(--ok);
+  animation: ping 2.4s var(--ease) infinite;
+}
+@keyframes ping {
+  0%   { transform: scale(0.6); opacity: 0.9; }
+  70%  { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   LOGIN -- the one place in this product that is allowed to make an impression.
+   Everything behind the sign-in is an instrument and stays quiet.
+
+   The motif is the cyclone isobar: concentric pressure contours around an eye,
+   the actual instrument of the hazard this district plans for. It is drawn as
+   SVG in LoginPage.jsx and drifts slowly. Not a grid, not a gradient mesh --
+   those belong to every other dashboard.
+   --------------------------------------------------------------------------- */
+
+.login { display: grid; grid-template-columns: 1.15fr 1fr; min-height: 100vh; }
+
+.login__brand {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: var(--s4); padding: var(--s8) var(--s7);
+  background:
+    radial-gradient(ellipse 110% 90% at 22% 42%,
+      color-mix(in srgb, var(--accent) 12%, transparent), transparent 62%),
+    var(--panel);
+  border-right: 1px solid var(--line);
+}
+.login__brand > * { position: relative; z-index: 1; }
+
+/* The isobar field. Sits behind the type, faded at the edges so it reads as
+   atmosphere rather than as a picture of something.
+
+   The centre is pushed down and right of the wordmark on purpose: the eye
+   sitting directly under the type made both harder to read. */
+.login__storm {
+  position: absolute; z-index: 0;
+  left: 38%; top: 60%; transform: translate(-50%, -50%);
+  width: min(118%, 880px); aspect-ratio: 1;
+  overflow: visible;
+  color: var(--accent);
+  opacity: 0.6;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 30%, transparent 70%);
+}
+:root[data-theme="light"] .login__storm { opacity: 0.42; }
+
+.login__storm .isobar {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+  vector-effect: non-scaling-stroke;
+}
+/* The whole system turns as one, slowly, the way a storm does. Rotating each
+   ring separately would break the nesting the geometry above guarantees. */
+.login__storm > g {
+  transform-origin: 500px 500px;
+  animation: drift 240s linear infinite;
+}
+.login__storm .isobar--dashed { stroke-dasharray: 5 9; opacity: 0.75; }
+.login__storm .eye { stroke-width: 1.6; }
+
+@keyframes drift { to { transform: rotate(360deg); } }
+
+.login__eyebrow {
+  display: flex; align-items: center; gap: var(--s2);
+  font-family: var(--mono); font-size: var(--fs-label); font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted);
+}
+.login__eyebrow::before {
+  content: ""; width: 26px; height: 1px; background: var(--accent); flex: none;
+}
+
+/* The one display moment in the product. Archivo's width axis is what makes it
+   a wordmark rather than a big heading. */
+.login__mark {
+  margin: 0;
+  font-size: var(--fs-display);
+  font-weight: 700;
+  font-stretch: 125%;
+  letter-spacing: 0.02em;
+  line-height: 0.88;
+}
+.login__blurb {
+  margin: 0; max-width: 36ch;
+  color: var(--muted); font-size: var(--fs-body); line-height: 1.6;
+}
+
+/* Three standing facts about the district, set as data. Grounds the wordmark in
+   the job instead of leaving it floating over a texture. */
+.login__facts {
+  display: flex; flex-wrap: wrap; gap: var(--s5);
+  margin-top: var(--s3); padding-top: var(--s4);
+  max-width: 560px;
+  border-top: 1px solid var(--line);
+}
+.login__fact { display: flex; flex-direction: column; gap: 2px; }
+.login__fact b {
+  font-family: var(--mono); font-size: var(--fs-body); font-weight: 500;
+  letter-spacing: 0.02em; color: var(--text);
+}
+.login__fact .label { letter-spacing: 0.1em; }
+
+.login__panel { display: grid; place-items: center; padding: var(--s5); }
+/* The sign-in half needs a little of the same light, or the glass card has
+   nothing behind it and flattens into a grey box. */
+.login__panel {
+  background: radial-gradient(700px 500px at 70% 30%,
+    color-mix(in srgb, var(--enroute) 8%, transparent), transparent 65%);
+}
+
+/* The form is a glass slab over the ambient wash. It is the only card on the
+   screen, so it can afford the material the instruments use. */
+.login-card {
+  display: flex; flex-direction: column; width: min(380px, 100%);
+  padding: var(--s6);
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line); border-radius: var(--r3);
+  box-shadow: var(--shadow-2), inset 0 1px 0 var(--glass-edge);
+  animation: rise var(--slow) var(--ease) both;
+}
+.login-card__title {
+  margin: 0 0 var(--s1); font-size: var(--fs-title); font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.login-card__hint { margin: 0 0 var(--s5); color: var(--muted); font-size: var(--fs-dense); }
+.login-card .field + .field { margin-top: var(--s4); }
+.login-card input { min-height: 42px; font-size: var(--fs-body); }
+.login-card .btn--commit { margin-top: var(--s5); min-height: 42px; font-size: var(--fs-body); }
+.login-card .error {
+  margin: var(--s4) 0 0; padding: var(--s2) var(--s3);
+  font-size: var(--fs-dense);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-left: 2px solid var(--danger); border-radius: 0 var(--r1) var(--r1) 0;
+}
+
+@media (max-width: 900px) {
+  .login { grid-template-columns: 1fr; min-height: 100dvh; }
+  .login__brand {
+    justify-content: flex-end; gap: var(--s3);
+    padding: var(--s7) var(--s5) var(--s5);
+    border-right: none; border-bottom: 1px solid var(--line);
+  }
+  .login__storm { left: -40%; width: 190%; }
+  .login__blurb, .login__facts { display: none; }
+  .login__panel { padding: var(--s5) var(--s4) var(--s7); place-items: center; }
+  .login-card { padding: var(--s5); }
+}
+
+/* ---------------------------------------------------------------------------
+   SHELL
+   --------------------------------------------------------------------------- */
+
+/* minmax(0, ...) on BOTH tracks is load-bearing. A grid track is min-content by
+   default, so the horizontally scrolling nav strip and the KPI band did not
+   shrink to the viewport -- they widened their column, and the entire phone
+   layout scrolled sideways with half of every row off-screen. */
+.layout {
+  display: grid; grid-template-columns: var(--rail) minmax(0, 1fr);
+  height: 100vh; height: 100dvh;
+  overflow: hidden;
+}
+.layout__main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+
+.layout__bar {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: 0 var(--s5); min-height: 46px; flex: none;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
+}
+.layout__bar .label { letter-spacing: 0.1em; }
+.layout__spacer { flex: 1; }
+
+/* position: relative anchors the map page, which fills this box absolutely. */
+.layout__body { position: relative; flex: 1; min-height: 0; overflow-y: auto; }
+
+/* ---------------------------------------------------------------------------
+   SIDEBAR
+   --------------------------------------------------------------------------- */
+
+.sidebar {
+  display: flex; flex-direction: column; min-height: 0; min-width: 0;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--line);
+  box-shadow: inset -1px 0 0 var(--glass-edge);
+}
+
+.sidebar__brand {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--s4) var(--s5); border-bottom: 1px solid var(--line);
+}
+.sidebar__mark {
+  font-size: var(--fs-title); font-weight: 700; font-stretch: 115%;
+  letter-spacing: 0.04em; line-height: 1;
+}
+.sidebar__sub { font-size: 10px; letter-spacing: 0.14em; }
+
+.nav {
+  list-style: none; margin: 0; padding: var(--s3) var(--s2);
+  flex: 1; min-width: 0; overflow-y: auto;
+}
+
+/* The active bar is a position marker, not decoration: it is the only thing
+   that says which section you are reading. */
+.nav__item {
+  position: relative;
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  gap: 2px var(--s2);
+  padding: var(--s2) var(--s3) var(--s2) var(--s4);
+  margin-bottom: 2px;
+  border-radius: var(--r1); text-decoration: none; color: var(--muted);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.nav__item::before {
+  content: ""; position: absolute; left: 6px; top: 50%;
+  width: 2px; height: 0; transform: translateY(-50%);
+  border-radius: 2px; background: var(--accent);
+  transition: height var(--slow) var(--ease);
+}
+.nav__item:hover { background: var(--panel-2); color: var(--text); }
+.nav__item.active { background: var(--panel-2); color: var(--text); }
+.nav__item.active::before { height: 20px; }
+
+.nav__label { font-size: var(--fs-dense); font-weight: 600; letter-spacing: -0.005em; }
+.nav__note { grid-column: 1; font-size: var(--fs-label); color: var(--muted); }
+
+.nav__count {
+  grid-row: 1 / span 2; grid-column: 2;
+  min-width: 28px; padding: 2px var(--s2); text-align: center;
+  border-radius: 999px; background: var(--bg); border: 1px solid var(--line-soft);
+  font-family: var(--mono); font-size: var(--fs-dense); font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.nav__item.active .nav__count { color: var(--text); border-color: var(--line); }
+/* A section with nothing waiting should not look like a section with work in it. */
+.nav__count.is-zero { opacity: 0.4; }
+
+.sidebar__foot {
+  display: flex; flex-direction: column; gap: var(--s3);
+  padding: var(--s4) var(--s5); border-top: 1px solid var(--line);
+}
+.sidebar__who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sidebar__who strong {
+  font-size: var(--fs-dense); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sidebar__actions { display: flex; gap: var(--s2); }
+.sidebar__actions button { flex: 1; }
+
+/* ---------------------------------------------------------------------------
+   PAGES
+   --------------------------------------------------------------------------- */
+
+.page { padding: var(--s5); max-width: 1320px; }
+.page__head { margin-bottom: var(--s5); }
+.page__title {
+  margin: 0; font-size: var(--fs-title); font-weight: 600; letter-spacing: -0.015em;
+}
+.page__hint { margin: var(--s1) 0 0; max-width: 64ch; color: var(--muted); font-size: var(--fs-dense); }
+
+.page__grid {
+  display: grid; gap: var(--s4);
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  align-items: start;
+}
+.page__grid--wide { grid-template-columns: minmax(0, 820px); }
+
+/* The map owns its whole page and does not scroll with the others. */
+.map-page { position: absolute; inset: 0; }
+
+/* ---------------------------------------------------------------------------
+   KPI STRIP -- the situational-awareness band. It used to render five figures
+   in body colour, always, so a 62% reach rate and a 98% one looked identical.
+   --------------------------------------------------------------------------- */
+
+.kpi-strip {
+  display: grid; grid-auto-flow: column;
+  /* Never narrower than the figure inside it. Equal 1fr columns squeezed
+     "134.8 min" onto two lines, which grew the whole band and shoved the map
+     down. The band scrolls before a number wraps. */
+  grid-auto-columns: minmax(max-content, 1fr);
+  flex: none;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
 }
 .kpi-strip__cell {
-  flex: 1; display: flex; flex-direction: column; gap: 2px;
-  padding: 10px 16px; background: var(--panel);
+  display: flex; flex-direction: column; gap: var(--s1);
+  padding: var(--s3) var(--s5); min-width: 140px;
+  border-left: 1px solid var(--line-soft);
 }
-.kpi-strip__label { font-size: 11px; text-transform: uppercase; color: var(--muted); }
-.kpi-strip__value { font-size: 20px; font-variant-numeric: tabular-nums; }
-.kpi-strip__dot {
-  display: grid; place-items: center; padding: 0 16px;
-  background: var(--panel); font-size: 12px; color: var(--muted);
-}
-.kpi-strip__dot.is-live { color: var(--ok); }
+.kpi-strip__cell:first-child { border-left: none; }
 
-/* --- dashboard grid --- */
-.dashboard { flex: 1; display: grid; grid-template-columns: 340px 1fr 320px; min-height: 0; }
-.dashboard__left, .dashboard__right {
-  overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px;
-  background: var(--bg);
+.kpi-strip__value {
+  font-family: var(--mono); font-size: var(--fs-figure); font-weight: 400;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.035em; line-height: 1;
+  white-space: nowrap;
 }
-.dashboard__left { border-right: 1px solid var(--line); }
-.dashboard__right { border-left: 1px solid var(--line); }
-.dashboard__map { position: relative; min-height: 0; }
+.kpi-strip__value.is-warn { color: var(--warn); }
+.kpi-strip__value.is-bad { color: var(--danger); }
+.kpi-strip__value.is-good { color: var(--ok); }
 
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+/* ---------------------------------------------------------------------------
+   PANELS
+   --------------------------------------------------------------------------- */
+
+.panel {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--r3); box-shadow: var(--clay);
+  animation: rise var(--slow) var(--ease) both;
+  transition: box-shadow var(--slow) var(--ease);
+}
+.panel:hover { box-shadow: var(--clay-lift); }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
 .panel__head {
-  display: flex; align-items: baseline; gap: 8px;
-  padding: 10px 12px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap;
+  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line-soft);
 }
-.panel__head h2 { margin: 0; font-size: 14px; }
-.panel__body { padding: 12px; }
+.panel__head h2 {
+  margin: 0; font-size: var(--fs-dense); font-weight: 600;
+  letter-spacing: 0.02em; text-transform: uppercase;
+}
+.panel__head .muted { font-size: var(--fs-label); font-family: var(--mono); letter-spacing: 0.06em; }
+.panel__body { padding: var(--s4); }
 
-/* --- map --- */
-.map-canvas { position: absolute; inset: 0; }
+/* An empty panel is an invitation, not a void. */
+.empty {
+  margin: 0; padding: var(--s4) 0; color: var(--muted); font-size: var(--fs-dense);
+}
+
+/* ---------------------------------------------------------------------------
+   MAP
+   --------------------------------------------------------------------------- */
+
+.map-canvas { position: absolute; inset: 0; background: var(--bg); }
 .map-canvas__gl { position: absolute; inset: 0; }
-.map-canvas__placeholder {
-  position: absolute; inset: 0; display: grid; place-items: center;
-  padding: 20px; text-align: center; color: var(--muted);
-  background: repeating-linear-gradient(45deg, #12151b, #12151b 12px, #151920 12px, #151920 24px);
+
+/* The basemap is a bright raster and the chrome is deep navy. Rather than swap
+   the tiles -- operators need the map they recognise -- the edges are feathered
+   into the shell so there is no hard luminance cliff, and the floating
+   instruments have something to sit against. Purely decorative, so it never
+   swallows a click. */
+.map-canvas::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to right, var(--map-shade), transparent 22%, transparent 78%, var(--map-shade)),
+              linear-gradient(to bottom, var(--map-shade), transparent 14%, transparent 86%, var(--map-shade));
 }
-.map-toggle {
-  position: absolute; top: 12px; right: 12px; z-index: 2;
-  display: flex; gap: 6px; align-items: center;
-  padding: 6px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+
+/* Our own instruments sit on the LEFT. MapLibre's zoom buttons own the
+   top-right, and the two used to overlap. */
+.map-instrument {
+  position: absolute; z-index: 2; width: 268px;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line); border-radius: var(--r3);
+  box-shadow: var(--shadow-2), inset 0 1px 0 var(--glass-edge);
+}
+.map-instrument > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s2);
+  padding: var(--s3); cursor: pointer; list-style: none;
+  font-family: var(--mono); font-size: var(--fs-label); font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+  border-radius: var(--r2);
+}
+.map-instrument > summary::-webkit-details-marker { display: none; }
+.map-instrument > summary::after {
+  content: "−"; font-size: 14px; line-height: 1; color: var(--muted);
+}
+.map-instrument:not([open]) > summary::after { content: "+"; }
+.map-instrument > summary:hover { color: var(--text); }
+.map-instrument__body { padding: 0 var(--s3) var(--s3); }
+
+.map-layers { top: var(--s3); left: var(--s3); }
+.map-layers__row {
+  display: flex; align-items: flex-start; gap: var(--s2);
+  padding: var(--s1) 0; font-size: var(--fs-dense); line-height: 1.35; cursor: pointer;
+}
+.map-layers__row input { margin: 3px 0 0; min-height: 0; flex: none; accent-color: var(--accent); }
+.map-layers__row em { font-style: normal; font-size: var(--fs-label); color: var(--muted); }
+.map-layers__row:hover em { color: var(--text); }
+/* The dot in front of each layer is the colour that layer actually draws with,
+   so this list doubles as the map's legend. */
+.map-layers__swatch { width: 8px; height: 8px; border-radius: 2px; flex: none; margin-top: 6px; }
+
+.zone-editor { left: var(--s3); bottom: var(--s7); }
+.zone-editor__controls { display: flex; gap: var(--s2); margin-bottom: var(--s2); }
+.zone-editor__controls select { flex: 1; min-width: 0; }
+.zone-editor__list { max-height: 132px; overflow-y: auto; }
+
+/* MapLibre's own chrome, brought into the system. Left alone it ships white
+   boxes with 4px radii that look pasted onto the page. */
+.maplibregl-ctrl-group {
+  background: var(--glass) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r3) !important;
+  box-shadow: var(--shadow-2), inset 0 1px 0 var(--glass-edge) !important;
+}
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--line-soft) !important; }
+.maplibregl-ctrl-group button { width: 30px !important; height: 30px !important; border-radius: 0 !important; }
+.maplibregl-ctrl-group button:hover { background: var(--panel-2) !important; }
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(var(--icon-invert, 1)) opacity(0.7); }
+:root[data-theme="light"] { --icon-invert: 0; }
+
+.maplibregl-ctrl-scale {
+  background: color-mix(in srgb, var(--panel) 80%, transparent) !important;
+  border-color: var(--line) !important;
+  color: var(--muted) !important;
+  font-family: var(--mono) !important; font-size: 10px !important;
+  border-radius: 0 var(--r1) var(--r1) 0 !important;
+}
+.maplibregl-ctrl-attrib {
+  background: color-mix(in srgb, var(--panel) 80%, transparent) !important;
+  border-radius: var(--r1) 0 0 0 !important;
+}
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-attrib a { color: var(--muted) !important; font-size: 10px !important; }
+
+/* Map popups. There was no way to identify a pin at all before -- you could see
+   a dot and not learn which unit it was. */
+.maplibregl-popup-content {
+  padding: 0 !important;
+  background: var(--glass) !important;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line);
+  border-radius: var(--r3) !important;
+  box-shadow: var(--shadow-2), inset 0 1px 0 var(--glass-edge) !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: var(--panel) !important;
+  border-bottom-color: var(--panel) !important;
+}
+.maplibregl-popup-close-button {
+  width: 24px; height: 24px; color: var(--muted) !important;
+  font-size: 16px !important; border-radius: var(--r1) !important;
+}
+.maplibregl-popup-close-button:hover { background: var(--panel-2) !important; color: var(--text) !important; }
+
+.map-pop { min-width: 176px; padding: var(--s3); font-family: var(--sans); }
+.map-pop__head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s2); }
+.map-pop__code {
+  font-family: var(--mono); font-size: var(--fs-dense); font-weight: 600; letter-spacing: 0.02em;
+}
+.map-pop__rows { display: grid; grid-template-columns: auto 1fr; gap: var(--s1) var(--s3); }
+.map-pop__rows dt {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+}
+.map-pop__hint {
+  margin: var(--s2) 0 0; padding-top: var(--s2);
+  border-top: 1px solid var(--line-soft);
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.map-pop__rows dd {
+  margin: 0; font-family: var(--mono); font-size: var(--fs-dense);
+  font-variant-numeric: tabular-nums; text-align: right;
 }
 
-/* --- dispatch panel --- */
-.policy-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
-.policy-toggle__btn {
-  flex: 1; display: flex; flex-direction: column; gap: 2px;
-  padding: 8px; text-align: left; font-size: 12px;
+/* ---------------------------------------------------------------------------
+   DISPATCH
+   --------------------------------------------------------------------------- */
+
+.dispatch-panel__footer {
+  display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+  margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line-soft);
 }
-.policy-toggle__btn.is-active { border-color: var(--accent); background: #1c2635; }
-.policy-toggle__btn em { color: var(--muted); font-style: normal; font-size: 11px; }
+.dispatch-panel__footer .muted { font-size: var(--fs-dense); }
 
-.plan-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.plan-table th { text-align: left; color: var(--muted); font-weight: 500; padding: 4px 6px; }
-.plan-table td { padding: 4px 6px; border-top: 1px solid var(--line); }
-.plan-table__actions { display: flex; gap: 4px; }
-.plan-table__actions button { padding: 2px 8px; font-size: 11px; }
+.task-cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s2); }
 
-.dispatch-panel__footer { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.task-card {
+  background: var(--panel-2); border: 1px solid var(--line-soft);
+  border-radius: var(--r3); overflow: hidden;
+  box-shadow: var(--clay);
+  transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
+  /* Keys are stable ids, so this fires once when a NEW area arrives over the
+     socket and never again on re-render. */
+  animation: arrive var(--slow) var(--ease) both;
+}
+@keyframes arrive {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.task-card:hover { border-color: var(--line); box-shadow: var(--clay-lift); }
+.task-card.is-open {
+  border-color: var(--muted); background: var(--panel); box-shadow: var(--clay-lift);
+}
+/* Already on its way: settled, so it stops competing for attention. */
+.task-card.is-sent { opacity: 0.72; }
+.task-card.is-sent:hover { opacity: 1; }
 
+.task-card__head {
+  width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: var(--s1) var(--s3);
+  align-items: center; padding: var(--s3);
+  text-align: left; background: transparent; border: none; border-radius: 0; min-height: 0;
+}
+.task-card__head:hover:not(:disabled) { background: transparent; border-color: transparent; }
+.task-card__head:active:not(:disabled) { transform: none; }
+
+/* Severity is carried by a bar, not a dot: it is the first thing to read and a
+   4px dot is not enough surface to rank five levels against each other. */
+.sev-bar { width: 3px; align-self: stretch; min-height: 30px; border-radius: 999px; flex: none; }
+
+.task-card__where {
+  font-family: var(--mono); font-size: var(--fs-dense); font-weight: 600; letter-spacing: 0.02em;
+}
+.task-card__meta {
+  grid-column: 2; min-width: 0;
+  font-size: var(--fs-label); color: var(--muted);
+  font-family: var(--mono); letter-spacing: 0.04em;
+}
+
+.task-card__detail {
+  padding: 0 var(--s3) var(--s3) var(--s3);
+  font-size: var(--fs-dense);
+  animation: open var(--slow) var(--ease) both;
+}
+@keyframes open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.task-card__reports, .task-card__units {
+  list-style: none; margin: 0 0 var(--s2); padding: 0;
+  display: flex; flex-direction: column; gap: var(--s2);
+}
+.task-card__reports li {
+  color: var(--muted); padding-left: var(--s3); border-left: 1px solid var(--line);
+}
+.task-card__reports strong { font-family: var(--mono); color: var(--text); }
+.task-card__units li { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.task-card__units strong { font-family: var(--mono); }
+.task-card__units--sent {
+  padding: var(--s2) var(--s3); margin-bottom: var(--s3);
+  background: var(--bg); border: 1px solid var(--line-soft); border-radius: var(--r1);
+}
+
+/* --- explain drawer --- */
 .explain-drawer {
-  margin-top: 12px; padding: 12px;
-  background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  margin-top: var(--s3); padding: var(--s3);
+  background: var(--bg); border: 1px solid var(--line); border-radius: var(--r2);
+  animation: open var(--slow) var(--ease) both;
 }
-.explain-drawer header { display: flex; justify-content: space-between; align-items: center; }
-.explain-drawer h3 { margin: 0; font-size: 13px; }
-.explain-drawer__summary { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 12px; }
-.explain-drawer__summary dt { color: var(--muted); }
-.explain-drawer__summary dd { margin: 0; font-variant-numeric: tabular-nums; }
-.explain-drawer__terms { list-style: none; margin: 10px 0 0; padding: 0; font-size: 12px; }
-.explain-drawer__terms li { display: grid; grid-template-columns: 120px 1fr 44px; gap: 8px; align-items: center; }
+.explain-drawer header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: var(--s3); padding-bottom: var(--s2); border-bottom: 1px solid var(--line-soft);
+}
+.explain-drawer h3 { margin: 0; font-family: var(--mono); font-size: var(--fs-dense); font-weight: 600; }
+.explain-drawer__summary {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3);
+  margin: 0 0 var(--s4);
+}
+.explain-drawer__summary > div { display: flex; flex-direction: column; gap: 2px; }
+.explain-drawer__summary dt { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.explain-drawer__summary dd {
+  margin: 0; font-family: var(--mono); font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+}
+.explain-drawer__terms { list-style: none; margin: 0; padding: 0; font-size: var(--fs-dense); }
+.explain-drawer__terms li {
+  display: grid; grid-template-columns: minmax(96px, 1fr) 2fr 46px;
+  gap: var(--s3); align-items: center; padding: var(--s1) 0;
+}
+.explain-drawer__terms em {
+  font-style: normal; font-family: var(--mono); font-variant-numeric: tabular-nums;
+  text-align: right; color: var(--muted);
+}
+.explain-drawer h4 {
+  margin: var(--s4) 0 var(--s2); font-family: var(--mono); font-size: var(--fs-label);
+  font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}
+/* Was the only list in the drawer left at browser defaults -- bulleted and
+   indented, directly under a reset one. */
+.explain-drawer__alts {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: var(--s1);
+  font-size: var(--fs-dense); color: var(--muted); font-family: var(--mono);
+}
 
-.bar { height: 8px; background: var(--panel); border-radius: 4px; overflow: hidden; }
-.bar__fill { height: 100%; background: var(--accent); }
+/* --- bars --- */
+.bar { height: 6px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+.bar__fill {
+  height: 100%; background: var(--muted); border-radius: 999px;
+  transition: width var(--slow) var(--ease);
+}
 
-/* --- roster / shelters / zones / alerts --- */
-.roster__filters { display: flex; gap: 6px; margin-bottom: 10px; }
-.roster__filters select { flex: 1; }
-.roster__list, .shelter-bars, .shelter-panel__list, .zone-editor__list, .alert-console__list {
-  list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px;
-  font-size: 12px;
+/* ---------------------------------------------------------------------------
+   ROSTER / SHELTERS / ZONES / ALERTS / FEEDS
+   --------------------------------------------------------------------------- */
+
+.roster__filters { display: flex; gap: var(--s2); margin-bottom: var(--s3); }
+.roster__filters select { flex: 1; min-width: 0; }
+
+.roster__list, .shelter-bars, .zone-editor__list, .alert-console__list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column;
+  font-size: var(--fs-dense);
 }
-.roster__list li, .shelter-panel__list li, .zone-editor__list li {
-  display: flex; align-items: center; gap: 8px;
+
+/* Five columns for five children: status dot, kind glyph, call sign, unit name,
+   status control. A four-column track wrapped the control onto its own row and
+   doubled the height of every unit in the roster. */
+.roster__list li {
+  display: grid; grid-template-columns: auto auto auto minmax(0, 1fr) auto;
+  gap: var(--s3); align-items: center;
+  padding: var(--s2) 0; border-top: 1px solid var(--line-soft);
 }
-.roster__code, .shelter-panel__code { font-weight: 600; min-width: 70px; }
+.roster__list li:first-child { border-top: none; }
+.roster__kind { font-size: 16px; line-height: 1; flex: none; }
+.roster__code { font-family: var(--mono); font-weight: 600; letter-spacing: 0.02em; }
+.roster__name {
+  color: var(--muted); font-size: var(--fs-label);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.roster__list select { min-height: 28px; padding: var(--s1) var(--s2); font-size: var(--fs-label); }
+
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
-.shelter-bars__row { display: grid; grid-template-columns: 90px 1fr 60px; gap: 8px; align-items: center; }
+.shelter-bars__row {
+  display: grid; grid-template-columns: 1fr 96px auto; gap: var(--s3);
+  align-items: center; padding: var(--s2) 0; border-top: 1px solid var(--line-soft);
+}
+.shelter-bars__row:first-child { border-top: none; }
+.shelter-bars__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .shelter-bars__row.is-warn .bar__fill { background: var(--warn); }
 .shelter-bars__row.is-full .bar__fill { background: var(--danger); }
 .shelter-bars__row.is-closed { opacity: 0.5; }
-.shelter-bars__row em { font-style: normal; color: var(--muted); text-align: right; }
-
-.zone-editor {
-  position: absolute; left: 12px; bottom: 12px; z-index: 2; width: 240px;
-  padding: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+.shelter-bars__row em {
+  font-style: normal; font-family: var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--muted); text-align: right; font-size: var(--fs-label);
 }
-.zone-editor__controls { display: flex; gap: 6px; margin-bottom: 8px; }
-.zone-editor__controls select { flex: 1; }
 
+.zone-editor__list li {
+  display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s1) 0; font-family: var(--mono); font-size: var(--fs-label);
+}
+.zone-editor__list li .btn--ghost { margin-left: auto; }
+
+.alert-console__list { gap: var(--s2); }
 .alert-console__list li {
-  padding: 8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px;
+  padding: var(--s2) var(--s3); background: var(--panel-2);
+  border: 1px solid var(--line-soft); border-left-width: 2px; border-radius: var(--r2);
+  box-shadow: var(--clay);
+  animation: arrive var(--slow) var(--ease) both;
 }
-.alert-console__list header { display: flex; align-items: center; gap: 6px; }
-.alert-console__actions { display: flex; gap: 6px; margin-top: 6px; }
-.alert-console__text { width: 100%; margin-top: 10px; min-height: 54px; resize: vertical; }
+.alert-console__list header {
+  display: flex; align-items: center; gap: var(--s2); margin-bottom: 2px;
+}
+.alert-console__list header strong { font-size: var(--fs-dense); }
+.alert-console__list header em {
+  font-style: normal; margin-left: auto;
+  font-family: var(--mono); font-size: var(--fs-label); letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.alert-console__when { font-family: var(--mono); font-size: var(--fs-label); color: var(--muted); }
 
-.flow-layer {
-  position: absolute; right: 12px; bottom: 12px; z-index: 2;
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
-  font-size: 12px;
+.report-feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+/* Two rows on purpose. These panels sit three-up, so a single-row layout put
+   "flood · severity 5 · 12 people" into a column narrow enough to clip it to
+   "flood · severi..." -- which is the whole content of the row. */
+.report-feed__row {
+  display: grid;
+  grid-template-columns: 8px auto minmax(0, 1fr) auto;
+  gap: var(--s1) var(--s3); align-items: center;
+  padding: var(--s2) 0; border-top: 1px solid var(--line-soft); font-size: var(--fs-dense);
+  animation: arrive var(--slow) var(--ease) both;
+}
+.report-feed__row .pill { grid-column: 4; grid-row: 1; }
+.report-feed__row:first-child { border-top: none; }
+.report-feed__code { font-family: var(--mono); font-weight: 600; letter-spacing: 0.02em; }
+.report-feed__what {
+  grid-column: 3 / -1; grid-row: 2;
+  color: var(--muted); font-family: var(--mono); font-size: var(--fs-label);
+}
+.report-feed__when {
+  grid-column: 3; grid-row: 1; justify-self: end;
+  font-family: var(--mono); font-size: var(--fs-label); color: var(--muted); white-space: nowrap;
 }
 
-/* --- scrubber --- */
-.scrubber {
-  display: flex; align-items: center; gap: 12px;
-  padding: 8px 16px; background: var(--panel); border-top: 1px solid var(--line);
-  font-size: 12px;
+.sms-triage { list-style: none; margin: var(--s3) 0 0; padding: 0; }
+.sms-triage__row {
+  padding: var(--s3) 0; border-top: 1px solid var(--line-soft); font-size: var(--fs-dense);
 }
-.scrubber input[type="range"] { flex: 1; }
+.sms-triage__row:first-child { border-top: none; }
+.sms-triage__body {
+  color: var(--text); word-break: break-word;
+  padding-left: var(--s3); border-left: 2px solid var(--line);
+}
+.sms-triage__meta {
+  margin-top: var(--s1); padding-left: var(--s3);
+  font-family: var(--mono); font-size: var(--fs-label); color: var(--muted);
+}
 
 .stub-notice {
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 10px; border: 1px dashed var(--line); border-radius: 6px; color: var(--muted);
+  display: flex; flex-direction: column; gap: var(--s1);
+  padding: var(--s3); border: 1px dashed var(--line); border-radius: var(--r1);
+  color: var(--muted); font-size: var(--fs-dense);
 }
-.stub-notice code { font-size: 11px; color: var(--warn); }
+.stub-notice code { font-family: var(--mono); font-size: var(--fs-label); color: var(--warn); }
 
-.error-page { padding: 40px; color: var(--danger); }
+.error-page { padding: var(--s7); color: var(--danger); }
+
+/* ---------------------------------------------------------------------------
+   RESPONSIVE
+   Three real layouts, not one breakpoint that hides things.
+   --------------------------------------------------------------------------- */
+
+/* Tablet: the rail narrows before it collapses, so the counts survive longer. */
+@media (max-width: 1100px) {
+  :root { --rail: 200px; }
+  .page__grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .kpi-strip__cell { padding: var(--s3) var(--s4); }
+  :root { --fs-figure: 26px; }
+}
+
+/* Narrow: the rail lies down into a strip above the content. The section NOTES
+   go, but the counts stay -- they are the reason the rail exists. */
+@media (max-width: 900px) {
+  /* TWO tracks for two children -- the rail and the main column. A third
+     track pushed .layout__main into an auto row, which collapsed
+     .layout__body to zero height and blanked the map page entirely. */
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .sidebar { border-right: none; border-bottom: 1px solid var(--line); }
+  .sidebar__brand {
+    flex-direction: row; align-items: baseline; gap: var(--s2);
+    padding: var(--s2) var(--s4);
+  }
+  .sidebar__sub { display: none; }
+
+  .nav {
+    display: flex; gap: var(--s1); padding: var(--s2) var(--s3);
+    overflow-x: auto; scrollbar-width: none;
+    /* Fade the trailing edge so a half-visible section reads as "there is more,
+       scroll" instead of as a section that got cut off. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav li { flex: none; }
+  .nav__item {
+    grid-template-columns: auto auto; white-space: nowrap;
+    padding: var(--s2) var(--s3); margin: 0;
+  }
+  .nav__item::before {
+    left: var(--s3); right: var(--s3); top: auto; bottom: 2px;
+    width: auto; height: 2px; transform: none;
+    transition: opacity var(--fast) var(--ease);
+    opacity: 0;
+  }
+  .nav__item.active::before { height: 2px; opacity: 1; }
+  .nav__note { display: none; }
+  .nav__count { grid-row: 1; }
+
+  .sidebar__foot {
+    flex-direction: row; align-items: center; justify-content: space-between;
+    padding: var(--s2) var(--s4);
+  }
+  .sidebar__actions { flex: none; }
+  .sidebar__actions button { white-space: nowrap; }
+
+  .layout__bar { padding: 0 var(--s4); }
+  .page { padding: var(--s4); }
+  .kpi-strip { grid-auto-flow: column; }
+  .kpi-strip__cell { min-width: 116px; padding: var(--s2) var(--s4); }
+}
+
+/* Phone: the map instruments have to fold away or they cover the district.
+   <details> does that natively -- no state, no script. */
+@media (max-width: 620px) {
+  :root { --fs-figure: 22px; }
+
+  /* On a phone the rail, the status bar and the KPI band together eat most of
+     the viewport, which left the map about 140px tall -- present, and useless.
+     So the document scrolls here instead of the shell, and the map claims a
+     real share of the screen rather than whatever is left over. */
+  .layout { height: auto; min-height: 100dvh; overflow: visible; }
+  .layout__body { overflow: visible; }
+  .layout__body:has(.map-page) { min-height: 68dvh; }
+  .page { padding: var(--s3); }
+  .page__grid { grid-template-columns: 1fr; gap: var(--s3); }
+  .panel__body { padding: var(--s3); }
+
+  .map-instrument { width: calc(100vw - var(--s5)); max-width: 300px; }
+  .zone-editor { bottom: var(--s6); }
+  /* Folded by default here, open on bigger screens -- see MapLayers/ZoneEditor. */
+  .map-instrument:not([open]) { width: auto; }
+
+  .kpi-strip {
+    grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    overflow-x: visible;
+  }
+  .kpi-strip__cell {
+    min-width: 0; padding: var(--s2) var(--s3);
+    min-height: 74px; justify-content: space-between;
+    border-top: 1px solid var(--line-soft);
+  }
+  /* Four figures into two columns on a phone: no hole, no scrolling. */
+  .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-strip__cell:nth-child(-n + 2) { border-top: none; }
+  .kpi-strip__cell:nth-child(odd) { border-left: none; }
+  /* The pill drops under the meta line instead of fighting it for width. */
+  .task-card__head { grid-template-columns: auto minmax(0, 1fr); }
+  .task-card__head .pill { grid-column: 2; justify-self: start; }
+  .explain-drawer__summary { grid-template-columns: 1fr 1fr; }
+  .explain-drawer__terms li { grid-template-columns: 1fr 46px; }
+  .explain-drawer__terms .bar { grid-column: 1 / -1; grid-row: 2; }
+
+  .roster__list li { grid-template-columns: auto auto minmax(0, 1fr); row-gap: var(--s1); }
+  .roster__name { grid-column: 3; }
+  .roster__list select { grid-column: 1 / -1; width: 100%; }
+  .shelter-bars__row { grid-template-columns: 1fr auto; }
+  .shelter-bars__row .bar { grid-column: 1 / -1; grid-row: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

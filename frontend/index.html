@@ -2,8 +2,47 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PS-05 Operations</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="DISHA — district emergency operations. Reports in, units out." />
+    <meta name="theme-color" content="#0b1620" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#eceff2" media="(prefers-color-scheme: light)" />
+
+    <!--
+      Set the theme BEFORE first paint. ThemeToggle applies it in an effect,
+      which is one frame too late: a dark-mode operator got a white flash on
+      every reload. Same storage key and same fallback as ThemeToggle.
+    -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("ps05.theme");
+          var theme =
+            saved === "dark" || saved === "light"
+              ? saved
+              : window.matchMedia("(prefers-color-scheme: light)").matches
+                ? "light"
+                : "dark";
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+
+    <!--
+      Archivo carries the display voice, IBM Plex Mono carries data. Both are
+      progressive: font-display swap means an ops room with no internet still
+      gets a correctly set interface in the system stack, it just loses the
+      wordmark's width. Nothing is laid out on a metric only these fonts have.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>DISHA — District Emergency Operations</title>
   </head>
   <body>
     <div id="root"></div>

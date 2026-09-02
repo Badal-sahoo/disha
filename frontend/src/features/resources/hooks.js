@@ -1,5 +1,5 @@
 /**
- * F11 hooks. Fully implemented -- reads come from the live store (already
+ * Fully implemented -- reads come from the live store (already
  * pushed there by the socket), writes go straight to the API and the resulting
  * broadcast updates every dashboard.
  */

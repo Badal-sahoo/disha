@@ -1,6 +1,9 @@
 /**
- * Catches the "TODO ..." errors thrown by unimplemented feature stubs so one
- * unfinished panel cannot blank the whole dashboard. Fully implemented.
+ * Stops one broken panel from blanking the whole dashboard.
+ *
+ * React unmounts the entire tree when a render throws, so without this a single
+ * bad API shape shows the operator a white screen instead of the eight panels
+ * that are still working.
  *
  * PROPS: label = str, children = ReactNode
  */
@@ -20,7 +23,7 @@ export default class ErrorBoundary extends Component {
     if (this.state.error) {
       return (
         <div className="stub-notice">
-          <strong>{this.props.label ?? "Not built yet"}</strong>
+          <strong>{this.props.label ?? "This panel failed"}</strong>
           <code>{this.state.error.message}</code>
         </div>
       );

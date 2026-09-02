@@ -1,5 +1,5 @@
 /**
- * F7 -- the full-snapshot endpoint. Fully implemented.
+ * the full-snapshot endpoint. Fully implemented.
  */
 import { api } from "@/shared/api/client";
 
@@ -24,7 +24,7 @@ import { api } from "@/shared/api/client";
  *        assignments: [{id, code, incident, incident_code, incident_lat,
  *                       incident_lon, resource, resource_code, resource_lat,
  *                       resource_lon, shelter, shelter_code, eta_min, gain,
- *                       policy, status, rescued_count, dispatched_at,
+ *                       status, leg, rescued_count, dispatched_at,
  *                       arrived_at, completed_at}],
  *        alerts:      [{id, identifier, event, severity, urgency, certainty,
  *                       polygon, sent_at, expires_at, active}],

@@ -34,3 +34,13 @@ npm-debug.log*
 .vscode/
 *.swp
 dishavenv
+# The raw OSM downloads. 40 MB of JSON that only exists to be compiled once --
+# backend/data/roadgraph.bin is the compiled graph and IS committed, because
+# production loads it with `seed_roadgraph --from-blob` and must never depend on
+# Overpass being up on the day.
+backend/data/*.osm.json
+
+# --- local dev only ---
+backend/test_smoke.py
+backend/dump.rdb
+frontend/test_frontend.js

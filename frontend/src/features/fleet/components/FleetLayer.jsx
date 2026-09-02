@@ -1,5 +1,5 @@
 /**
- * F9 -- drives map layers, renders nothing itself.
+ * drives map layers, renders nothing itself.
  *
  * PROPS: map = maplibregl.Map | null
  */

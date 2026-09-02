@@ -1,7 +1,5 @@
 /**
- * F7 hooks. Fully implemented -- this is the wiring that ties the socket, the
- * resync contract and the store together. The functions it calls (applyDelta,
- * syncSources, resyncFullState) are the stubs in map.js.
+ * Ties the socket, the resync path and the live store together.
  */
 import { useEffect, useRef } from "react";
 
@@ -50,8 +48,8 @@ export function useOpsSocket(bbox = null) {
  * IN : map = maplibregl.Map | null
  * OUT: void
  *
- * Subscribes to the whole store rather than a slice on purpose -- syncSources
- * throttles internally, so one subscription is cheaper than six.
+ * Subscribes to the whole store rather than a slice on purpose: syncSources
+ * throttles to one repaint per frame, so one subscription is cheaper than six.
  */
 export function useSyncedMap(map) {
   useEffect(() => {

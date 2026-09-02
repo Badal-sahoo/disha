@@ -1,6 +1,6 @@
 /**
- * F12 hooks. Wired: create/delete round-trip to the API and the resulting
- * broadcast re-renders every dashboard. The drawing geometry is the stub.
+ * Wired: create/delete round-trip to the API and the resulting
+ * broadcast re-renders every dashboard.
  */
 import { useCallback, useEffect, useState } from "react";
 
@@ -36,11 +36,7 @@ export function useZones(map) {
   // edit arriving over the socket.
   useEffect(() => {
     if (!map) return;
-    try {
-      renderZones(map, zones);
-    } catch {
-      /* stub not filled in yet */
-    }
+    renderZones(map, zones);
   }, [map, zones]);
 
   const cancelDraw = useCallback(() => {

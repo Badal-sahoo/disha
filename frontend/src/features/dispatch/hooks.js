@@ -1,14 +1,10 @@
 /**
- * F10 hooks. The fetch/flip plumbing is implemented; computeKpis -- the
- * client-side mirror of the server metric -- is the stub.
- *
- * Owner: Track 2 - Day 3
+ * Fetches the dispatch plan and commits it.
  */
 import { useCallback, useEffect } from "react";
 
 import { toApiError } from "@/shared/api/client";
 import { useLiveStore } from "@/shared/store/liveStore";
-import { POLICIES } from "@/shared/utils/constants";
 
 import {
   commitAll as commitAllRequest,
@@ -19,35 +15,38 @@ import {
 import { useDispatchStore } from "./store";
 
 /**
- * Fetch all three plans up front, then flip between them locally.
+ * The current dispatch plan: who should go where, right now.
  *
  * IN : --
  * OUT: {
- *        policy:      str,
- *        plan:        {assignments, kpi} | null,
- *        plans:       obj,          // all three, keyed by policy
+ *        plan:        {assignments} | null,
  *        loading:     bool,
  *        error:       obj|null,
- *        setPolicy:   (policy) => void,       // instant -- no round trip
  *        reload:      () => Promise<void>,
  *        commit:      (codes) => Promise<{committed, rejected}>,
  *        commitEvery: () => Promise<{committed, rejected}>,
  *      }
  *
- * Fetching all three at mount is what makes the toggle feel instant, and it is
- * also what makes the comparison fair: the three plans are computed from one
- * snapshot of the world, not three snapshots taken seconds apart.
+ * One solve, not three. This used to fetch a plan per policy so the panel could
+ * A/B them live; that compared algorithms rather than getting anyone out of the
+ * water, and it made every reload three solves deep.
  */
 export function useDispatchPlan() {
-  const { policy, plans, loading, error, setPolicy, setPlan, setLoading, setError, clear } =
+  const { plan, loading, error, setPlan, setLoading, setError, clear } =
     useDispatchStore();
+
+  // A primitive, so zustand re-renders only when the count actually moves.
+  const planInputKey = useLiveStore(
+    (s) =>
+      `${s.incidents.filter((i) => i.status === "OPEN").length}:` +
+      `${s.resources.filter((r) => r.status === "IDLE").length}`
+  );
 
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const results = await Promise.all(POLICIES.map((p) => fetchPlan(p)));
-      POLICIES.forEach((p, i) => setPlan(p, results[i]));
+      setPlan(await fetchPlan());
     } catch (e) {
       setError(toApiError(e));
     } finally {
@@ -55,9 +54,23 @@ export function useDispatchPlan() {
     }
   }, [setPlan, setLoading, setError]);
 
+  // Re-solve whenever the solver's INPUT changes -- a new report arriving, or a
+  // unit coming free. Fetching once on mount left the panel showing a plan for
+  // a district that had moved on, which reads as "dispatch is not running".
+  //
+  // Keyed on the open/idle counts rather than on the store's `t`, which also
+  // ticks for kpi and shelter deltas that cannot change the plan.
   useEffect(() => {
     reload();
-  }, [reload]);
+  }, [reload, planInputKey]);
+
+  // Drop the plan when the panel goes away.
+  //
+  // The KPI strip lives in the shell and is mounted for the whole session, so a
+  // plan left in the store kept it tinted and labelled "Forecast" on the Live
+  // map -- predicting the effect of a plan the operator had navigated away from
+  // and could no longer see. The forecast belongs to the Dispatch screen.
+  useEffect(() => clear, [clear]);
 
   const commit = useCallback(
     async (codes) => {
@@ -77,12 +90,9 @@ export function useDispatchPlan() {
   }, [clear, reload]);
 
   return {
-    policy,
-    plan: plans[policy] ?? null,
-    plans,
+    plan,
     loading,
     error,
-    setPolicy,
     reload,
     commit,
     commitEvery,
@@ -97,37 +107,4 @@ export function useDispatchPlan() {
  */
 export function useExplain() {
   return { explain: useCallback((code) => explainAssignment(code), []) };
-}
-
-export function computeKpis(state, plan) {
-  // F10 - Client-side mirror of the server metric, so the KPI strip moves the
-  //       INSTANT the policy toggle flips instead of waiting for a round trip.
-  //       The server value stays authoritative on the next tick.
-  //
-  // IN :
-  //   state = the live store:
-  //           {incidents: [{id, severity, status, reported_at,
-  //                         first_response_at}], resources: [...], ...}
-  //   plan  = [{id, code, incident, incident_code, resource_code, eta_min,
-  //             gain, policy, status}]     // the PROPOSED assignments
-  //
-  // OUT: {
-  //        crit_mean:    float,   // mean predicted minutes to first response,
-  //                               //   over incidents with severity >= 4
-  //        crit_p90:     float,   // 90th percentile of that list
-  //        crit_sla_pct: float,   // 0..100, share of critical incidents whose
-  //                               //   eta_min lands inside the SLA
-  //        unreached:    int,     // OPEN severity >= 4 with no assignment in `plan`
-  //        awaiting:     int,     // OPEN incidents with no assignment, any severity
-  //      }
-  //
-  // HOW: for a PROPOSED plan there is no first_response_at yet, so predict it
-  //      as assignment.eta_min. For already-DISPATCHED work use the real
-  //      first_response_at where it exists. Match the server's arithmetic in
-  //      dispatch/services.py compute_kpi() or the strip will visibly jump when
-  //      the authoritative value arrives a second later.
-  //
-  // EDGE: return zeros, never NaN or null. An empty database must still render
-  //       a KPI strip -- NaN reaches the DOM as "NaN" and looks broken on stage.
-  throw new Error("TODO computeKpis -- Track 2 - Day 3");
 }

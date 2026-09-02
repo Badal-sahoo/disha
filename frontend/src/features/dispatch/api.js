@@ -1,31 +1,28 @@
 /**
- * F10 -- the dispatch endpoints. Fully implemented.
+ * the dispatch endpoints. Fully implemented.
  *
  * plan and commit are deliberately separate calls. That separation is what lets
- * the operator flip the policy toggle as often as they like without dispatching
+ * the operator refresh the preview as often as they like without dispatching
  * a single boat by accident.
  */
 import { api } from "@/shared/api/client";
 
 /**
- * GET /api/dispatch/plan?policy=
+ * GET /api/dispatch/plan
  *
- * IN : policy = "OPTIMIZED" | "GREEDY" | "GREEDY_SEVERITY"
  * OUT: Promise<{
- *        policy:      str,
  *        assignments: [{id, code, incident, incident_code, incident_lat,
  *                       incident_lon, resource, resource_code, resource_lat,
  *                       resource_lon, shelter, shelter_code, eta_min, gain,
- *                       policy, status, dispatched_at}],   // status "PROPOSED"
- *        kpi:         {crit_mean, crit_p90, crit_sla_pct, unreached, awaiting},
+ *                       status, leg, dispatched_at}],   // status "PROPOSED"
  *      }>
  *
  * A PREVIEW -- nothing is written and no unit is told anything. The server
  * computes all three policies from the SAME state, which is what makes the
  * comparison honest rather than a claim.
  */
-export function fetchPlan(policy = "OPTIMIZED") {
-  return api.get("/dispatch/plan", { params: { policy } }).then((r) => r.data);
+export function fetchPlan() {
+  return api.get("/dispatch/plan").then((r) => r.data);
 }
 
 /**
@@ -58,7 +55,9 @@ export function commitAll() {
 /**
  * GET /api/dispatch/{code}/explain
  *
- * IN : code = str   "ASG0088"
+ * IN : code   = str   "ASG0088"
+ *                     than ASG0003 under OPTIMIZED -- send the wrong one and
+ *                     the server explains the wrong dispatch.
  * OUT: Promise<{
  *        w:       float,      // total priority, 0..1
  *        eta_min: float,
@@ -76,15 +75,16 @@ export function commitAll() {
  * The audit view, and the answer to "why should NDRF trust this?"
  */
 export function explainAssignment(code) {
-  return api.get(`/dispatch/${encodeURIComponent(code)}/explain`).then((r) => r.data);
+  return api
+    .get(`/dispatch/${encodeURIComponent(code)}/explain`)
+    .then((r) => r.data);
 }
 
 /**
- * GET /api/kpi?policy=
+ * GET /api/kpi
  *
- * IN : policy = "OPTIMIZED" | "GREEDY" | "GREEDY_SEVERITY"
  * OUT: Promise<{crit_mean, crit_p90, crit_sla_pct, unreached, awaiting}>
  */
-export function fetchKpi(policy = "OPTIMIZED") {
-  return api.get("/kpi", { params: { policy } }).then((r) => r.data);
+export function fetchKpi() {
+  return api.get("/kpi").then((r) => r.data);
 }

@@ -1,30 +1,15 @@
 /**
- * F13 hooks. Fully wired -- fetch, preposition and broadcast all round-trip.
- * The polygon rendering is the stub in cap.js.
+ * CAP warnings: load them and keep their polygons on the map.
  */
 import { useCallback, useEffect, useState } from "react";
 
 import { toApiError } from "@/shared/api/client";
 import { useLiveStore } from "@/shared/store/liveStore";
 
-import {
-  broadcastCitizenAlert as broadcastRequest,
-  fetchAlerts,
-  prePosition as prePositionRequest,
-} from "./api";
+import { fetchAlerts } from "./api";
 import { renderCapPolygon } from "./cap";
 
-/**
- * IN : map = maplibregl.Map | null
- * OUT: {
- *        alerts:      [alert, ...],
- *        pending:     bool,
- *        error:       obj|null,
- *        reload:      () => Promise<void>,
- *        preposition: (id, maxUnits) => Promise<[assignment]>,
- *        broadcast:   (id, text, channels) => Promise<{queued, devices, numbers}>,
- *      }
- */
+/** IN: map | null -- OUT: {alerts, pending, error, reload} */
 export function useAlerts(map) {
   const alerts = useLiveStore((s) => s.alerts);
   const patch = useLiveStore((s) => s.patch);
@@ -36,8 +21,8 @@ export function useAlerts(map) {
     setError(null);
     try {
       patch({ alerts: await fetchAlerts(true) });
-    } catch (e) {
-      setError(toApiError(e));
+    } catch (requestError) {
+      setError(toApiError(requestError));
     } finally {
       setPending(false);
     }
@@ -51,36 +36,8 @@ export function useAlerts(map) {
 
   useEffect(() => {
     if (!map) return;
-    try {
-      renderCapPolygon(map, alerts);
-    } catch {
-      /* stub not filled in yet */
-    }
+    renderCapPolygon(map, alerts);
   }, [map, alerts]);
 
-  const preposition = useCallback(async (id, maxUnits = 5) => {
-    setPending(true);
-    try {
-      return await prePositionRequest(id, maxUnits);
-    } catch (e) {
-      setError(toApiError(e));
-      throw e;
-    } finally {
-      setPending(false);
-    }
-  }, []);
-
-  const broadcast = useCallback(async (id, text, channels) => {
-    setPending(true);
-    try {
-      return await broadcastRequest(id, text, channels);
-    } catch (e) {
-      setError(toApiError(e));
-      throw e;
-    } finally {
-      setPending(false);
-    }
-  }, []);
-
-  return { alerts, pending, error, reload, preposition, broadcast };
+  return { alerts, pending, error, reload };
 }

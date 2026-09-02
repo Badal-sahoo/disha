@@ -1,8 +1,8 @@
 /**
- * F10 -- why this unit for this incident. Fully wired.
+ * Why this unit was chosen for this incident.
  *
- * The four priority terms must sum to w. Rendering them as proportional bars
- * makes a mismatch obvious at a glance, which is the point of an audit view.
+ * The four priority terms add up to w, drawn as proportional bars so a mismatch
+ * is obvious at a glance.
  *
  * PROPS:
  *   code    = str|null      assignment code; null closes the drawer
@@ -46,7 +46,7 @@ export default function ExplainDrawer({ code, onClose }) {
     <aside className="explain-drawer">
       <header>
         <h3>{code}</h3>
-        <button type="button" onClick={onClose}>
+        <button type="button" className="btn--ghost" onClick={onClose}>
           Close
         </button>
       </header>
@@ -55,13 +55,22 @@ export default function ExplainDrawer({ code, onClose }) {
 
       {data && (
         <>
+          {/* Three figures side by side rather than a two-column list: these
+              are the answer, and they were previously set smaller than the
+              labels explaining them. */}
           <dl className="explain-drawer__summary">
-            <dt>Priority (w)</dt>
-            <dd>{data.w?.toFixed(3)}</dd>
-            <dt>ETA</dt>
-            <dd>{data.eta_min?.toFixed(1)} min</dd>
-            <dt>Gain</dt>
-            <dd>{data.gain?.toFixed(2)}</dd>
+            <div>
+              <dt>Priority (w)</dt>
+              <dd>{data.w?.toFixed(3)}</dd>
+            </div>
+            <div>
+              <dt>ETA</dt>
+              <dd>{data.eta_min?.toFixed(1)} min</dd>
+            </div>
+            <div>
+              <dt>Gain</dt>
+              <dd>{data.gain?.toFixed(2)}</dd>
+            </div>
           </dl>
 
           <ul className="explain-drawer__terms">

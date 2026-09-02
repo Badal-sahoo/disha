@@ -1,11 +1,10 @@
 /**
- * F7 -- the ONE in-memory store. Every dashboard feature reads from here rather
+ * the ONE in-memory store. Every dashboard feature reads from here rather
  * than fetching its own copy, which is what keeps the map, the KPI strip and
  * the panels from disagreeing with each other.
  *
- * The setters below are implemented (plumbing). applyDelta -- the reducer that
- * patches this store from a socket event -- lives in features/map/map.js and is
- * a stub, because how each event merges is real logic.
+ * applyDelta -- the reducer that patches this store from a socket event --
+ * lives in features/map/map.js.
  */
 import { create } from "zustand";
 
@@ -23,7 +22,7 @@ const EMPTY = {
   zones: [], //      {id, lat, lon, radius_km, severity, source, active, created_at}
   assignments: [], //{id, code, incident, incident_code, incident_lat, incident_lon,
   //                  resource, resource_code, resource_lat, resource_lon,
-  //                  shelter, shelter_code, eta_min, gain, policy, status,
+  //                  shelter, shelter_code, shelter_kind, eta_min, gain, status, leg,
   //                  rescued_count, dispatched_at, arrived_at, completed_at}
   alerts: [], //     {id, identifier, event, severity, urgency, certainty,
   //                  polygon[[lat,lon]], sent_at, expires_at, active}

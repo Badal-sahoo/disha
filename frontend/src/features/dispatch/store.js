@@ -1,42 +1,28 @@
 /**
- * F10 local state: the three fetched plans and which one is showing.
+ * Local state: the current dispatch plan.
  *
- * Fully implemented. Separate from the live store on purpose -- plans are a
- * preview that belongs to one panel, while liveStore is the shared truth every
- * feature reads.
+ * Separate from the live store on purpose -- a plan is a preview belonging to
+ * one panel, while liveStore is the shared truth every feature reads.
+ *
+ * This used to hold three plans at once, one per policy, so an A/B toggle could
+ * flip between them instantly. That was a comparison of algorithms, not a tool
+ * for sending help, so it is gone: the panel solves one plan, the best one, and
+ * the operator decides whether to send it.
  */
 import { create } from "zustand";
 
-export const useDispatchStore = create((set, get) => ({
-  /** "OPTIMIZED" | "GREEDY" | "GREEDY_SEVERITY" -- opens on the optimiser */
-  policy: "OPTIMIZED",
-
-  /**
-   * All three plans, keyed by policy, so flipping the toggle is instant rather
-   * than a round trip:
-   *   {OPTIMIZED: {assignments, kpi}, GREEDY: {...}, GREEDY_SEVERITY: {...}}
-   */
-  plans: {},
+export const useDispatchStore = create((set) => ({
+  /** {assignments: [...]} | null -- proposals only; the KPI strip is
+      measured-live and never reads from here. */
+  plan: null,
 
   loading: false,
   error: null, // toApiError() shape
 
-  /** IN: policy = str -- OUT: void */
-  setPolicy: (policy) => set({ policy }),
-
-  /**
-   * IN : policy = str
-   *      plan   = {assignments: [...], kpi: {...}}
-   * OUT: void
-   */
-  setPlan: (policy, plan) => set((s) => ({ plans: { ...s.plans, [policy]: plan } })),
-
+  setPlan: (plan) => set({ plan }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
-  /** Drop every cached plan -- after a commit, they are all stale. */
-  clear: () => set({ plans: {}, error: null }),
-
-  /** OUT: {assignments, kpi} | null -- the plan for the selected policy */
-  currentPlan: () => get().plans[get().policy] ?? null,
+  /** After a commit the cached plan is stale. */
+  clear: () => set({ plan: null, error: null }),
 }));

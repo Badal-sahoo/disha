@@ -1,57 +1,31 @@
 /**
- * WebSocket transport. Fully implemented -- reconnect, auth and the resync
- * contract are all wiring, not logic.
- *
- * Two channels (system design 07):
- *   /ws/ops           every dashboard joins; receives all ten event types
- *   /ws/unit/{code}   one team, so a crew on a phone is not parsing the
- *                     whole district's traffic
- *
- * The token goes in the QUERY STRING because a browser cannot set an
- * Authorization header on a WebSocket handshake. backend/realtime/middleware.py
- * reads it from there.
+ * WebSocket transport for the live map. One channel, no auth -- the socket is
+ * read-only and every write still goes through the authenticated REST API.
  */
-import { useAuthStore } from "@/features/auth/store";
-
 const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:8000/ws";
 
-/** Custom close codes the backend sends. Anything else is a network drop. */
-const CLOSE_UNAUTHENTICATED = 4401; // token missing/expired -> refresh, retry
-const CLOSE_FORBIDDEN = 4403; // not your unit -> do not retry
-
 /**
- * Open a resilient connection to one channel.
+ * Open a self-healing connection to /ws/ops.
  *
- * IN : path      = str        "/ops" or "/unit/BOAT-04"
- *      handlers  = {
- *        onEvent:   (event) => void,   // event = {type: str, data: obj}
- *        onOpen:    () => void,        // ALSO fires on every RECONNECT --
- *                                      //   call resyncFullState() from here
- *        onClose:   (code) => void,
+ * IN : handlers = {
+ *        onEvent: (event) => void,   // event = {type, data}
+ *        onOpen:  () => void,        // ALSO fires on every reconnect --
+ *                                    //   call resyncFullState() from here
+ *        onClose: () => void,
  *      }
- * OUT: {close: () => void}   -- call it on unmount, or the socket outlives
- *                               the component and reconnects forever
+ * OUT: {close: () => void}   -- call it on unmount, or the socket outlives the
+ *                               component and reconnects forever
  *
- * RECONNECT: exponential backoff 1s, 2s, 4s ... capped at 30s, reset to 1s on a
- * successful open. On a 4401 close it asks the auth store for the current
- * access token again before retrying -- by then the axios interceptor will
- * usually have refreshed it.
+ * Reconnect backoff: 1s, 2s, 4s ... capped at 30s, reset on a successful open.
  */
-export function connectChannel(path, { onEvent, onOpen, onClose } = {}) {
+export function connectOps({ onEvent, onOpen, onClose } = {}) {
   let socket = null;
   let closedByUs = false;
   let retryMs = 1000;
   let timer = null;
 
   function open() {
-    const { access } = useAuthStore.getState();
-    if (!access) {
-      // Nothing to authenticate with. Try again shortly; a login may be in flight.
-      timer = setTimeout(open, retryMs);
-      return;
-    }
-
-    socket = new WebSocket(`${WS_URL}${path}?token=${encodeURIComponent(access)}`);
+    socket = new WebSocket(`${WS_URL}/ops`);
 
     socket.onopen = () => {
       retryMs = 1000;
@@ -60,17 +34,15 @@ export function connectChannel(path, { onEvent, onOpen, onClose } = {}) {
 
     socket.onmessage = (raw) => {
       try {
-        // IN : raw.data = '{"type": "incident.new", "data": {...}}'
-        // OUT: handed to onEvent as a parsed object
         onEvent?.(JSON.parse(raw.data));
       } catch {
         /* a malformed frame must not kill the socket */
       }
     };
 
-    socket.onclose = (e) => {
-      onClose?.(e.code);
-      if (closedByUs || e.code === CLOSE_FORBIDDEN) return;
+    socket.onclose = () => {
+      onClose?.();
+      if (closedByUs) return;
       timer = setTimeout(open, retryMs);
       retryMs = Math.min(retryMs * 2, 30000);
     };
@@ -88,29 +60,3 @@ export function connectChannel(path, { onEvent, onOpen, onClose } = {}) {
     },
   };
 }
-
-/**
- * The ops channel. Every dashboard calls this exactly once.
- *
- * IN : handlers = same shape as connectChannel
- * OUT: {close}
- */
-export function connectOps(handlers) {
-  return connectChannel("/ops", handlers);
-}
-
-/**
- * One team's channel.
- *
- * IN : code     = str   Resource.code, "BOAT-04"
- *      handlers = same shape as connectChannel
- * OUT: {close}
- *
- * Closes with 4403 and does NOT retry when the logged-in user does not drive
- * that unit -- retrying a permission failure just hammers the server.
- */
-export function connectUnit(code, handlers) {
-  return connectChannel(`/unit/${encodeURIComponent(code)}`, handlers);
-}
-
-export { CLOSE_UNAUTHENTICATED, CLOSE_FORBIDDEN };

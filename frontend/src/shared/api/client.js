@@ -5,7 +5,6 @@
  *   request  -> attaches  Authorization: Bearer <access>
  *   response -> on 401, refreshes ONCE and replays every queued request
  *
- * Fully implemented. Nothing in this file is a stub.
  */
 import axios from "axios";
 
@@ -116,11 +115,33 @@ api.interceptors.response.use(
 );
 
 /**
+ * GET an endpoint that returns a list, and always hand back an array.
+ *
+ * Django REST Framework paginates its list views, so those come back as
+ * {count, next, previous, results} rather than a bare array. Endpoints built on
+ * a plain APIView are NOT paginated and return the array directly. This copes
+ * with both, so no caller has to know which kind it is talking to -- forgetting
+ * that is what makes a component crash with "x is not iterable".
+ *
+ * IN : url = str, config = axios config (params, etc.)
+ * OUT: Promise<Array>
+ */
+export function getList(url, config) {
+  return api.get(url, config).then(({ data }) => unwrapList(data));
+}
+
+/** The shape-handling half of getList, split out so it can be tested directly. */
+export function unwrapList(data) {
+  if (Array.isArray(data)) return data;
+  return data?.results ?? [];
+}
+
+/**
  * Normalise any axios failure into something a component can render.
  *
  * IN : error = the axios error object
  * OUT: {status: number|null, code: str, detail: str, fields: obj}
- *      code   -- "not_implemented" while a backend service is still a stub,
+ *      code   -- "not_implemented" when a backend service is unfinished,
  *                "invalid" for a 400, "network" when the request never landed
  *      fields -- DRF's per-field validation errors, {} when there are none
  */

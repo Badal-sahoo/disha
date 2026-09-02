@@ -1,14 +1,14 @@
 /**
- * F12 -- the road-cut editor. Fully implemented.
+ * the road-cut editor. Fully implemented.
  */
-import { api } from "@/shared/api/client";
+import { api, getList } from "@/shared/api/client";
 
 /**
  * GET /api/zones
  * OUT: Promise<[{id, lat, lon, radius_km, severity, source, active, created_at}]>
  */
 export function listZones() {
-  return api.get("/zones").then((r) => r.data);
+  return getList("/zones");
 }
 
 /**

@@ -14,7 +14,10 @@ export default function App() {
 
 const styles = StyleSheet.create({
   app: {
+    // The DISHA ground. HomeScreen paints its own background over this, so the
+    // only place it shows is behind the safe area and during the first frame --
+    // which is exactly where the old charcoal appeared as a mismatched band.
     flex: 1,
-    backgroundColor: '#121414',
+    backgroundColor: '#0b1620',
   },
 });

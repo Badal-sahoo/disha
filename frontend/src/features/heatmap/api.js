@@ -1,5 +1,5 @@
 /**
- * F8 -- the heatmap endpoint. Fully implemented.
+ * the heatmap endpoint. Fully implemented.
  */
 import { api } from "@/shared/api/client";
 

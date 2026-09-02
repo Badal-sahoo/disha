@@ -1,10 +1,10 @@
 /**
- * F11 -- resource and shelter management. Fully implemented.
+ * resource and shelter management. Fully implemented.
  *
  * Let the operator correct reality. Units break down, shelters flood, and the
  * system must accept being told so.
  */
-import { api } from "@/shared/api/client";
+import { api, getList } from "@/shared/api/client";
 
 /**
  * GET /api/resources
@@ -16,7 +16,7 @@ import { api } from "@/shared/api/client";
  *                speed_kmph, status, free_at, base_name}]>
  */
 export function listResources(filter = {}) {
-  return api.get("/resources", { params: filter }).then((r) => r.data);
+  return getList("/resources", { params: filter });
 }
 
 /**
@@ -49,7 +49,7 @@ export function updateResourceStatus(code, status) {
  *                status}]>
  */
 export function listShelters(filter = {}) {
-  return api.get("/shelters", { params: filter }).then((r) => r.data);
+  return getList("/shelters", { params: filter });
 }
 
 /**
