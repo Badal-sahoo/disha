@@ -5,7 +5,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "//": "React Router owns every path. Without this, a hard refresh on /dispatch asks Vercel for a file that does not exist and returns 404.",
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
@@ -14,7 +13,10 @@
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     }
   ]
